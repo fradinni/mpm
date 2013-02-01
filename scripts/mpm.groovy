@@ -45,6 +45,7 @@ def params = options.arguments()
 def update = {
 	print "\n-> Updating available Minecraft packages... "
 	Updater.updateAvailablePackages()
+	println "[Done]"
 }
 
 
@@ -64,6 +65,25 @@ def search = {
 	}
 
 	LocalRepository.getInstance().displayAvailableLocalPackagesList(params[0])
+}
+
+
+def install = {
+	if(!params || !params[0]) {
+		script.usage()
+		return
+	}
+
+	// Get package name to install
+	def packageName = params[0].toLowerCase()
+
+	// Download package
+	try {
+		Downloader.downloadMinecraftPackage(packageName)
+	} catch (Exception e) {
+		println e.message
+		return
+	}
 }
 
 
@@ -87,4 +107,8 @@ if(options.l) {
 
 if(options.s) {
 	search()
+}
+
+if(options.i) {
+	install()
 }

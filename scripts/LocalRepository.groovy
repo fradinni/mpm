@@ -21,8 +21,6 @@ class LocalRepository {
 
 	public List getAvailableLocalPackagesList(nameFilter = null) {
 
-		println "nameFilter = ${nameFilter}"
-
 		File xmlFile = getLocalPackagesXmlFile()
 		def rootNode = new XmlParser().parse(xmlFile)
 		def packageNodes = rootNode.packages.package

@@ -35,6 +35,21 @@ class RemoteRepository {
 		}
 	}
 
+
+	public String getMinecraftPackageXmlFile(packageName) {
+
+		// Check if a version is specified for package
+		if(packageName.indexOf(':') > 0) {
+			
+		} 
+		// Else search latest version of package
+		else {
+
+		}
+
+	}
+
+
 	public static RemoteRepository getInstance() {
 		if(!instance) {
 			instance = new RemoteRepository()

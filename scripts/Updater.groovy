@@ -23,7 +23,6 @@ class Updater {
 			def out = new BufferedOutputStream(fos)
 			out << new URL(remoteXmlFile).openStream()
 			out.close()
-			println "[Done]"
 		} catch (Exception e) {
 			println "Unable to update xml packages file...\n${e.message}"
 			return
