@@ -18,8 +18,9 @@ def script = new CliBuilder(usage: 'mpm -[acdhrsu] [params]')
 script.with {
 	h longOpt: 'help', 'Display mpm usage...'
 	u longOpt: 'update', 'Update available Minecraft packages'
+	l longOpt: 'list', 'List availaible Minecraft packages'
 	s longOpt: 'search', 'Search Minecraft packages'
-	a longOpt: 'add', 'Add Minecraft package'
+	i longOpt: 'install', 'Install a Minecraft package'
 	r longOpt: 'remove', 'Remove a Minecraft package'
 	c longOpt: 'create', 'Create a Minecraft package'
 	d longOpt: 'deploy', 'Deploy a Minecraft package'
@@ -38,6 +39,34 @@ def params = options.arguments()
 
 
 
+///////////////////////////////////////////////////////////////////////////////
+// Script Methods
+//
+def update = {
+	print "\n-> Updating available Minecraft packages... "
+	Updater.updateAvailablePackages()
+}
+
+
+def list = {
+	if(params && params[0] == 'local') {
+		LocalRepository.getInstance().displayAvailableLocalPackagesList()
+	} else {
+		RemoteRepository.getInstance().displayAvailableRemotePackagesList()
+	}
+}
+
+
+def search = {
+	if(!params || !params[0]) {
+		script.usage()
+		return
+	}
+
+	LocalRepository.getInstance().displayAvailableLocalPackagesList(params[0])
+}
+
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Script Options
@@ -52,11 +81,10 @@ if(options.u) {
 	update()
 }
 
+if(options.l) {
+	list()
+}
 
-///////////////////////////////////////////////////////////////////////////////
-// Script Methods
-//
-def update() {
-	println "Updating available Minecraft packages..."
-	Updater.getInstance().updateAvailablePackages()
+if(options.s) {
+	search()
 }

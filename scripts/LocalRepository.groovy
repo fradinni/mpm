@@ -1,7 +1,7 @@
 class LocalRepository {
 
 	private static LocalRepository instance = null
-	private File repositoryDir
+	public File repositoryDir
 
 	/**
 	 * Default Constructor
@@ -14,13 +14,45 @@ class LocalRepository {
 	}
 
 
-	/**
-	 *
-	 */
-	public void updateLocalPackagesXmlFile(byte[] fileBytes) {
-		File localFile = new File(repositoryDir, "packages.xml")
-		localFile.setBytes(fileBytes)
+	public File getLocalPackagesXmlFile() {
+		return new File(repositoryDir, "packages.xml")
 	}
+
+
+	public List getAvailableLocalPackagesList(nameFilter = null) {
+
+		println "nameFilter = ${nameFilter}"
+
+		File xmlFile = getLocalPackagesXmlFile()
+		def rootNode = new XmlParser().parse(xmlFile)
+		def packageNodes = rootNode.packages.package
+
+		def packagesList = []
+		for(int i=0; i<packageNodes.size(); i++) {
+
+			if( nameFilter && packageNodes[i].name.text().toLowerCase().contains(nameFilter.toLowerCase()) ) {
+				packagesList.add( new MinecraftPackage(packageNodes[i]) )
+			} 
+			else if(!nameFilter) {
+				packagesList.add( new MinecraftPackage(packageNodes[i]) )
+			}
+		}
+
+		packagesList = packagesList.sort{ it.name.toLowerCase() }
+
+		return packagesList
+	}
+
+
+	public void displayAvailableLocalPackagesList(nameFilter = null) {
+		println "\n[Local] Minecraft available packages list :\n"
+
+		def packagesList = getAvailableLocalPackagesList(nameFilter)
+		packagesList.each { p ->
+			println " ${p.name}\t\t${p.description}"
+		}
+	}
+
 
 	public static LocalRepository getInstance() {
 		if(!instance) {

@@ -1,7 +1,7 @@
 class RemoteRepository {
 
 	private static RemoteRepository instance = null
-	private String remoteUrl = "http://nfradin.fr/mpm/repo"
+	public static String remoteUrl = "http://nfradin.fr/mpm/repo"
 
 
 	/**
@@ -10,29 +10,30 @@ class RemoteRepository {
 	public RemoteRepository() {}
 
 
-	/**
-	 *
-	 */
-	public File getPackagesXmlFile() {
+	public List getAvailableRemotePackagesList() {
 
-		// Get remote file bytes
-		def xmlUrl = remoteUrl + "/packages.xml"
-		def file = new FileOutputStream(xmlUrl.tokenize("/")[-1])
-		def out = new BufferedOutputStream(file)
-		out << 
-		out.close()
+		def rootNode = new XmlParser().parse(remoteUrl+"/packages.xml")
+		def packageNodes = rootNode.packages.package
 
-		File remoteFile = new URL(xmlUrl).openStream()
-		def bytes = remoteFile.bytes
-		if(!bytes) {
-			println "Unable to read remove xml packages file..."
-			return
+		def packagesList = []
+		for(int i=0; i<packageNodes.size(); i++) {
+			packagesList.add( new MinecraftPackage(packageNodes[i]) )
 		}
-		
-		// Update local file
-		//LocalRepository.getInstance().updateLocalPackagesXmlFile(bytes)
+
+		packagesList = packagesList.sort{ it.name.toLowerCase() }
+
+		return packagesList
 	}
 
+
+	public void displayAvailableRemotePackagesList() {
+		println "\n[Remote] Minecraft available packages list:\n"
+
+		def packagesList = getAvailableRemotePackagesList()
+		packagesList.each { p ->
+			println " ${p.name}\t\t${p.description}"
+		}
+	}
 
 	public static RemoteRepository getInstance() {
 		if(!instance) {
