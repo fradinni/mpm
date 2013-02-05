@@ -14,11 +14,43 @@ evaluate(new File("scripts/parse_script_args.groovy")) // Parse script arguments
 ///////////////////////////////////////////////////////////////////////////////
 
 
+//
+// Method - Resolve dependencies to install for package installation
+// @return List<ResolvedPackage> resolvedDependencies
+//
+resolveDependenciesToInstallForPackage = { ResolvedPackage parentPackage ->
+	
+	List resolvedPackages=[]
+
+	// Iterate on package dependencies
+	parentPackage.descriptor.dependencies?.each { MinecraftPackageDescriptor dependency ->
+		
+		// Resolve dependency
+		resolveParams = [packageName: dependency.name, packageVersion: dependency.version, mcversion: dependency.mcversion]
+		ResolvedPackage resolvedPackage = evaluate(new File("scripts/resolve_package.groovy"))
+		if(resolvedPackage == null) {
+			println " X> Error, unable to find package '${pkgName}'"
+			System.exit(1)
+		}
+
+		// Check if resolved dependency requires other dependencies
+		resolvedPackages.addAll(resolveDependenciesToInstallForPackage(resolvedPackage))
+
+		// Add resolved dependency to resolvedPackages list
+		resolvedPackages.add(resolvedPackage)
+	}
+
+	return resolvedPackages
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
 println "===================================================="
 println "= Minecraft Package Manager v1.0                   " 
 println "= --------------------------------------------------"
 println "= System properties:"
-//println "=   Minecraft version:  " + getMinecraftVersion()
+println "=   Minecraft version:  " + getMinecraftVersion()
 println "=   Minecraft profile:  " + MPM_ACTIVE_PROFILE.text
 println "=   Minecraft install:  " + MINECRAFT_INSTALL_DIR.absolutePath
 println "=   JAVA version:       " + getJavaVersion()
@@ -164,9 +196,9 @@ if(SCRIPT_OPTIONS.i) {
 		}
 
 		// If install profile is specified, set it
-		if(OPTION_ARGUMENTS.size() == 2) {
-			installProfileName = OPTION_ARGUMENTS[1]
-		}
+		//if(OPTION_ARGUMENTS.size() == 2) {
+		//	installProfileName = OPTION_ARGUMENTS[1]
+		//}
 
 		if(installProfileName == "default") {
 			println " X> You cannot install package on 'default' profile"
@@ -178,13 +210,38 @@ if(SCRIPT_OPTIONS.i) {
 		try {
 			profile = new MinecraftProfile(new File(MPM_PROFILES_DIRECTORY, installProfileName+".mcp"))
 		} catch (Exception e) {
-			println " X> Unable to find specified profile '${installProfileName}'"
+			println " X> Unable to find profile '${installProfileName}'"
 			System.exit(1)
 		}
 
 		// Initialize packages map
 		def PACKAGES = [:]
 
+		// Resolve package
+		resolveParams = [packageName: pkgName, packageVersion: pkgVersion, mcversion: mcversion]
+		ResolvedPackage resolvedPackage = evaluate(new File("scripts/resolve_package.groovy"))
+		if(resolvedPackage == null) {
+			println " X> Error, unable to find package '${pkgName}'"
+			System.exit(1)
+		}
+
+		// Get descriptor of resolved package
+		MinecraftPackageDescriptor resolvedPackageDescriptor = resolvedPackage.descriptor
+
+		// Check if package is already installed on current profile
+		if(profile.hasDependency(resolvedPackageDescriptor)) {
+			println " X> Package '${resolvedPackageDescriptor.name}' already installed on profile '${profile.name}'"
+			System.exit(1)
+		}
+
+		// Check if package requires other dependencies
+		List<ResolvedPackage> resolvedDependencies = resolveDependenciesToInstallForPackage(resolvedPackage)
+		println "Dependencies to install"
+		resolvedDependencies.findAll { !profile.hasDependency(it.descriptor) }?.each { ResolvedPackage dependency ->
+			println dependency.name
+		}
+
+		/*
 		// Check if package exists in local repo
 		findParams = [mcversion: mcversion, packageName: pkgName, packageVersion: pkgVersion]
 		MinecraftPackage pkgToInstall = evaluate(new File("scripts/find_local_package.groovy"))
@@ -305,6 +362,7 @@ if(SCRIPT_OPTIONS.i) {
 
 		// Save profile config file
 		profile.save()
+		*/
 		System.exit(0)
 
 	} 

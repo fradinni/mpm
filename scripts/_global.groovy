@@ -11,8 +11,8 @@ GLOBAL = 1
 //System.properties.putAll( ["http.proxyHost":"proxy.intra.bt.com", "http.proxyPort":"8080"] )
 
 // Set remote repository URL
-REMOTE_REPO_URL = 'C:\\Users\\WAXAYAZ\\Desktop\\MPM Workspace\\Repository'
-//REMOTE_REPO_URL = 'http://nfradin.fr/mpm/repo'
+//REMOTE_REPO_URL = 'C:\\Users\\WAXAYAZ\\Desktop\\MPM Workspace\\Repository'
+REMOTE_REPO_URL = 'http://nfradin.fr/mpm/repo'
 
 // Get user directory path
 USER_DIRECTOY = new File(System.getProperty('user.home'))
@@ -22,6 +22,9 @@ MINECRAFT_INSTALL_DIR = new File(System.getenv("APPDATA"), '.minecraft')
 
 // Set MPM directory
 MPM_DIRECTORY = new File(USER_DIRECTOY, '.mpm')
+
+// Set Minecraft version file
+MINECRAFT_VERSION_FILE = new File(MPM_DIRECTORY, "mcversion")
 
 // Set MPM_REPO directory
 MPM_REPO_DIRECTORY = new File(MPM_DIRECTORY, 'repository')
@@ -44,56 +47,30 @@ def backupDefaultMinecraftProfile = { dest ->
 	}
 }
 
-initCommonProperties = {
-
-	if(!MPM_DIRECTORY.exists()) {
-		MPM_DIRECTORY.mkdir()
-	}
-
-	if(!MPM_REPO_DIRECTORY.exists()) {
-		MPM_REPO_DIRECTORY.mkdir()
-	}
-
-	if(!MPM_PROFILES_DIRECTORY.exists()) {
-		MPM_PROFILES_DIRECTORY.mkdir()
-	}
-
-	if(!MPM_PROFILES_BACKUP_DIRECTORY.exists()) {
-		backupDefaultMinecraftProfile(MPM_PROFILES_BACKUP_DIRECTORY)
-	}
-
-	if(!MPM_ACTIVE_PROFILE.exists()) {
-		MPM_ACTIVE_PROFILE.write("default")
-	}
+getMinecraftVersion = {
+	return MINECRAFT_VERSION_FILE.text
 }
-
-if(!MINECRAFT_INSTALL_DIR.exists()) {
-	println "Unable to find Minecraft installation directory..."
-	return
-}
-
-if(INIT_COMMON) {
-	initCommonProperties() // Initialize Paths for common properties
-}
-
 
 // GLOBAL Fnuction
-getMinecraftVersion = {
+getMinecraftVersionFromJAR = {
+
 	// Get groovy root class loader
 	def rootLoader = this.class.classLoader.rootLoader
 
-	// Add minecraft JAR to loader classpath
 	File minecraftJAR = new File(MINECRAFT_INSTALL_DIR.absolutePath + "/bin/minecraft.jar")
 	if(!minecraftJAR.exists()) {
 		println "Unable to load minecraft.jar !"
 		return null
 	}
+
+	// Add minecraft JAR to loader classpath
 	rootLoader.addURL(minecraftJAR.toURI().toURL())
 
 	// Load class containing Minecraft version
 	B = Class.forName('b', true, rootLoader)
 
-	return B.newInstance().a()
+	def version = B.newInstance().a()
+	MINECRAFT_VERSION_FILE.write(version)
 }
 
 getJavaVersion = {
@@ -116,4 +93,40 @@ File.metaClass.md5 = { ->
 		}
 	}
 	new BigInteger( 1, digest.digest() ).toString( 16 ).padLeft( 32, '0' )
+}
+
+initCommonProperties = {
+
+	if(!MPM_DIRECTORY.exists()) {
+		MPM_DIRECTORY.mkdir()
+	}
+
+	if(!MPM_REPO_DIRECTORY.exists()) {
+		MPM_REPO_DIRECTORY.mkdir()
+	}
+
+	if(!MPM_PROFILES_DIRECTORY.exists()) {
+		MPM_PROFILES_DIRECTORY.mkdir()
+	}
+
+	if(!MPM_PROFILES_BACKUP_DIRECTORY.exists()) {
+		backupDefaultMinecraftProfile(MPM_PROFILES_BACKUP_DIRECTORY)
+		getMinecraftVersionFromJAR()
+	}
+
+	if(!MPM_ACTIVE_PROFILE.exists()) {
+		MPM_ACTIVE_PROFILE.write("default")
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// SCRIPT START 
+
+if(!MINECRAFT_INSTALL_DIR.exists()) {
+	println "Unable to find Minecraft installation directory..."
+	return
+}
+
+if(INIT_COMMON) {
+	initCommonProperties() // Initialize Paths for common properties
 }

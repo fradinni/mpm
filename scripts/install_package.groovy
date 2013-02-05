@@ -55,20 +55,7 @@ if(pkgDescriptor.installType == "native") {
 	new AntBuilder().move(file: new File(MPM_PROFILES_DIRECTORY, profile.name+"/bin/minecraft.jar.tmp"), toFile: new File(MPM_PROFILES_DIRECTORY, profile.name+"/bin/minecraft.jar"))
 		
 	// Delete temp directory and jar file
-	ant.delete(dir: tempJarDir)
-	//delete(file: new File(MPM_PROFILES_DIRECTORY, profile.name+"/minecraft.jar.tmp"))
-
-	def newJar = new File(MPM_PROFILES_DIRECTORY, profile.name+"/bin/minecraft.jar")
-	def oldJar = new File(MPM_PROFILES_BACKUP_DIRECTORY, "bin/minecraft.jar")
-
-	println oldJar.size()
-	println newJar.size()
-
-	if(newJar.size() == oldJar.size()) {
-		println " X> Error during patch of minecraft.jar ! NO PANIC :) Just try again..."
-		return false
-	}
-	
+	ant.delete(dir: tempJarDir)	
 } 
 
 // DIRECTORY INSTALLATION
