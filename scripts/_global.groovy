@@ -40,7 +40,7 @@ MPM_ACTIVE_PROFILE = new File(MPM_PROFILES_DIRECTORY, "000_active")
 
 ///////////////////////////////////////////////////////////////////////////////
 
-def backupDefaultMinecraftProfile = { dest ->
+backupDefaultMinecraftProfile = { dest ->
 	println "-> Backup default Minecraft installation..."
 	( new AntBuilder ( ) ).copy(toDir: dest) {
 		fileset(dir : MINECRAFT_INSTALL_DIR)
@@ -49,28 +49,6 @@ def backupDefaultMinecraftProfile = { dest ->
 
 getMinecraftVersion = {
 	return MINECRAFT_VERSION_FILE.text
-}
-
-// GLOBAL Fnuction
-getMinecraftVersionFromJAR = {
-
-	// Get groovy root class loader
-	def rootLoader = this.class.classLoader.rootLoader
-
-	File minecraftJAR = new File(MINECRAFT_INSTALL_DIR.absolutePath + "/bin/minecraft.jar")
-	if(!minecraftJAR.exists()) {
-		println "Unable to load minecraft.jar !"
-		return null
-	}
-
-	// Add minecraft JAR to loader classpath
-	rootLoader.addURL(minecraftJAR.toURI().toURL())
-
-	// Load class containing Minecraft version
-	B = Class.forName('b', true, rootLoader)
-
-	def version = B.newInstance().a()
-	MINECRAFT_VERSION_FILE.write(version)
 }
 
 getJavaVersion = {
@@ -101,6 +79,11 @@ initCommonProperties = {
 		MPM_DIRECTORY.mkdir()
 	}
 
+	if(!MINECRAFT_VERSION_FILE.exists()) {
+		def shell = new GroovyShell() 
+		shell.run(new File('scripts/get_mcversion.groovy')) 
+	}
+
 	if(!MPM_REPO_DIRECTORY.exists()) {
 		MPM_REPO_DIRECTORY.mkdir()
 	}
@@ -111,7 +94,6 @@ initCommonProperties = {
 
 	if(!MPM_PROFILES_BACKUP_DIRECTORY.exists()) {
 		backupDefaultMinecraftProfile(MPM_PROFILES_BACKUP_DIRECTORY)
-		getMinecraftVersionFromJAR()
 	}
 
 	if(!MPM_ACTIVE_PROFILE.exists()) {

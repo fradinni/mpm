@@ -13,47 +13,15 @@ if(!profileDir.exists()) {
 	return false
 }
 
-defaultProfileDir = new File(MPM_PROFILES_DIRECTORY, "default")
-activeProfileDir = new File(MPM_PROFILES_DIRECTORY, activeProfile)
-
-// Apply Diff
-fileToCopy = [:]
-def applyDiff (srcDir, path) {
-
-	// Iterate on each file
-	srcDir.eachFile { file ->
-		if(file.isFile() && file.name != "minecraft.jar") {
-			def defaultFile = new File(defaultProfileDir, path+"/"+file.name)
-			def profileFile = new File(activeProfileDir, path+"/"+file.name)
-
-			// If file doesn't exists in profile or his md5 is different, replace it in profile
-			if(  (!defaultFile.exists() && ( !profileFile.exists() || (profileFile.md5() != file.md5()) )) ||
-					(defaultFile.exists() && !profileFile.exists() && (defaultFile.md5() != file.md5()) ) ||
-					(defaultFile.exists() && profileFile.exists() && (profileFile.md5() != file.md5())) ) {
-				fileToCopy.put(file.absolutePath, profileFile.absolutePath)
-			}
-		}
-	}
-
-	// Iterate on each directory
-	srcDir.eachDir { dir ->
-		def defaultDirectory = new File(defaultProfileDir.absolutePath+"/"+path+"/"+dir.name)
-		def profileDirectory = new File(activeProfileDir.absolutePath+"/"+path+"/"+dir.name)
-
-		// If directory not exists in defaut and profile
-		if(!defaultDirectory.exists() && !profileDirectory.exists()) {
-			// Create it
-			profileDirectory.mkdir()
-		}
-
-		// applyDiff on this sub directory
-		applyDiff(new File(MINECRAFT_INSTALL_DIR.absolutePath + path + "/" + dir.name), path+"/"+dir.name)
-	}
-}
-
 if(activeProfile != "default") {	
-	applyDiff(MINECRAFT_INSTALL_DIR, "")
-	fileToCopy.each { key, value ->
+	def filesToCopy = evaluate(new File("scripts/backup_active_profile.groovy"))
+	filesToCopy?.each { key, value ->
+		/*
+		println " -> Copy File"
+		println "   Src: " + key
+		println "   To : " + value
+		println "" 
+		*/
 		new AntBuilder().copy(file: key, toFile: value, overwrite: true)
 	}
 }

@@ -10,6 +10,7 @@ class MinecraftPackage extends MinecraftPackageDescriptor {
 	Date lastUpdate
 	String installType
 	String installDir
+	Integer priority = 10
 	List<MinecraftPackageDescriptor> dependencies
 
 	public MinecraftPackage() {}
@@ -25,6 +26,7 @@ class MinecraftPackage extends MinecraftPackageDescriptor {
 		this.checksum = xmlNode.checksum?.text()
 		this.installType = xmlNode.install?.@type[0]
 		this.installDir = xmlNode.install?.@dir[0]
+		this.priority = xmlNode.install?.@priority[0]
 
 		// If package has dependecies
 		if(xmlNode.dependencies?.package?.size() > 0) {

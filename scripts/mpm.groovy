@@ -15,7 +15,8 @@ evaluate(new File("scripts/parse_script_args.groovy")) // Parse script arguments
 
 
 //
-// Method - Resolve dependencies to install for package installation
+// Method - Resolve dependencies to install for a resolved package
+//
 // @return List<ResolvedPackage> resolvedDependencies
 //
 resolveDependenciesToInstallForPackage = { ResolvedPackage parentPackage ->
@@ -36,8 +37,16 @@ resolveDependenciesToInstallForPackage = { ResolvedPackage parentPackage ->
 		// Check if resolved dependency requires other dependencies
 		resolvedPackages.addAll(resolveDependenciesToInstallForPackage(resolvedPackage))
 
-		// Add resolved dependency to resolvedPackages list
-		resolvedPackages.add(resolvedPackage)
+		// Add resolved dependency to resolvedPackages list if not already added
+		if(	resolvedPackages.find{ it.descriptor.name != resolvedPackage.descriptor.name } == null) {
+			resolvedPackages.add(resolvedPackage)
+		}
+
+		// If already added but version is more recent, add it to list
+		else if(resolvedPackages.find{ it.descriptor.name == resolvedPackage.descriptor.name && 
+				resolvedPackage.descriptor.version > it.descriptor.version }) {
+			resolvedPackages.add(resolvedPackage)
+		}
 	}
 
 	return resolvedPackages
@@ -52,56 +61,76 @@ println "= --------------------------------------------------"
 println "= System properties:"
 println "=   Minecraft version:  " + getMinecraftVersion()
 println "=   Minecraft profile:  " + MPM_ACTIVE_PROFILE.text
-println "=   Minecraft install:  " + MINECRAFT_INSTALL_DIR.absolutePath
-println "=   JAVA version:       " + getJavaVersion()
-println "=   Operating system:   " + System.getProperty("os.name")
+//println "=   Minecraft install:  " + MINECRAFT_INSTALL_DIR.absolutePath
+//println "=   JAVA version:       " + getJavaVersion()
+//println "=   Operating system:   " + System.getProperty("os.name")
 println "===================================================="
-println ""
+
+if(MPM_ACTIVE_PROFILE.text == "default") {
+
+	println "\nHello ${System.getProperty("user.name")} !"
+	println ""
+	println "READ THIS BEFORE USE :"
+	println "----------------------"
+	println "By default, your Minecraft installation is saved in a DEFAULT PROFILE."
+	println "You CANNOT ADD DEPENDENCIES to this default profile and NO MODIFICATIONS"
+	println "WILL BE SAVED."
+	println ""
+	println "This default profile is used as reference for other profiles."
+	println ""
+	println "   IT'S RECOMMENDED to use a CLEAN INSTALL of Minecraft"
+	println ""
+	println "for the first use of Minecraft Packages Manager !!!"
+	println ""
+	println "Thanks for use ;)\n"
+	println "Nicolas FRADIN - 2013 - http://nfradin.fr\n\n"	
+
+	// Prompt user
+	String promptStr = "Continue ? [y/n] "
+	def prompt = System.console().readLine(promptStr)
+	if(prompt.toLowerCase() != "y") {
+		new AntBuilder().delete(dir: MPM_PROFILES_BACKUP_DIRECTORY)
+		System.exit(0)
+	}
+
+	println "\nTo start, let's create a profile..."
+	
+	MinecraftProfile profile
+	
+	while(!profile) {
+		// Prompt user
+		promptStr = "\nPlease enter a profile name : "
+		prompt = System.console().readLine(promptStr)
+
+		profileParams = [name: prompt]
+		profile = evaluate(new File("scripts/create_profile.groovy"))
+		if(profile == null) {
+			println " X> Error, unable to create profile '${profile}' !"
+		}
+	}
+	println " -> Profile '${profile.name}' created'"
+
+	profileParams = [name: profile.name]
+	def success = evaluate(new File("scripts/set_active_profile.groovy"))
+	if(!success) {
+		println "Unable to set active profile !"
+		System.exit(1)
+	} else {
+		println " -> Active profile was set to '${profile.name}'"
+	}
+
+	println "\nPlease press Enter to display usage..."
+	System.console().readLine("")
+	println ""
+	println ""
+	SCRIPT.usage()
+}
 
 // HELP
 if(SCRIPT_OPTIONS.h) {
 	SCRIPT.usage()
 	System.exit(0)
 }
-
-
-// LIST AVAILABLE PACKAGES
-if(SCRIPT_OPTIONS.l) {
-	Map<String, List<MinecraftPackageDescriptor>> availablePackages = evaluate(new File("scripts/available_packages.groovy"))
-	
-	availablePackages.each { version, versionPackages ->
-
-		def sortedPkg = []
-		if(OPTION_ARGUMENTS && OPTION_ARGUMENTS.find{ it == "all-pkg-versions" }) {
-			sortedPkg = versionPackages
-		} 
-		// Remove duplicate package entries
-		else {
-			def pkgNames = versionPackages*.name as Set
-			pkgNames.each { name ->
-				def pkg = versionPackages.find{it.name == name}
-				if(pkg) sortedPkg.add(pkg)
-			}
-		}
-
-		println "\n-> Minecraft v${version}:"	
-		if(sortedPkg?.size() > 0) {
-			sortedPkg = sortedPkg.sort{it.name}
-			sortedPkg?.each { pkg ->
-				if(OPTION_ARGUMENTS && OPTION_ARGUMENTS.find{ it == "all-pkg-versions" }) {
-					println "\t- ${pkg.name} [v${pkg.version}]\t\t${pkg.description}"
-				} else {
-					println "\t- ${pkg.name}\t\t${pkg.description}"
-				}
-			}
-		} else {
-			println "\t- No available packages..."
-		}
-	}
-
-	System.exit(0)
-}
-
 
 // SET/DISPLAY ACTIVE PROFILE
 if(SCRIPT_OPTIONS.p) {
@@ -113,7 +142,7 @@ if(SCRIPT_OPTIONS.p) {
 			println "Unable to set active profile !"
 			System.exit(1)
 		} else {
-			println " -> Active profile was set to '${OPTION_ARGUMENTS[0]}'"
+			println "\n -> Active profile was set to '${OPTION_ARGUMENTS[0]}'"
 		}
 	} 
 	// Display current profile
@@ -168,6 +197,43 @@ if(SCRIPT_OPTIONS.dp) {
 	System.exit(0)
 }
 
+// LIST AVAILABLE PACKAGES
+if(SCRIPT_OPTIONS.l) {
+	Map<String, List<MinecraftPackageDescriptor>> availablePackages = evaluate(new File("scripts/available_packages.groovy"))
+	
+	availablePackages.each { version, versionPackages ->
+
+		def sortedPkg = []
+		if(OPTION_ARGUMENTS && OPTION_ARGUMENTS.find{ it == "all-pkg-versions" }) {
+			sortedPkg = versionPackages
+		} 
+		// Remove duplicate package entries
+		else {
+			def pkgNames = versionPackages*.name as Set
+			pkgNames.each { name ->
+				def pkg = versionPackages.find{it.name == name}
+				if(pkg) sortedPkg.add(pkg)
+			}
+		}
+
+		println "\n-> Minecraft v${version}:"	
+		if(sortedPkg?.size() > 0) {
+			sortedPkg = sortedPkg.sort{it.name}
+			sortedPkg?.each { pkg ->
+				if(OPTION_ARGUMENTS && OPTION_ARGUMENTS.find{ it == "all-pkg-versions" }) {
+					println "\t- ${pkg.name} [v${pkg.version}]\t\t${pkg.description}"
+				} else {
+					println "\t- ${pkg.name}"//\t\t${pkg.description}"
+				}
+			}
+		} else {
+			println "\t- No available packages..."
+		}
+	}
+
+	System.exit(0)
+}
+
 // INSTALL
 if(SCRIPT_OPTIONS.i) {
 	
@@ -214,8 +280,8 @@ if(SCRIPT_OPTIONS.i) {
 			System.exit(1)
 		}
 
-		// Initialize packages map
-		def PACKAGES = [:]
+		/////////////////////////////////////////////////////////////////////////////////////////
+		// Start
 
 		// Resolve package
 		resolveParams = [packageName: pkgName, packageVersion: pkgVersion, mcversion: mcversion]
@@ -234,80 +300,13 @@ if(SCRIPT_OPTIONS.i) {
 			System.exit(1)
 		}
 
-		// Check if package requires other dependencies
+		// Check if package requires other dependencies which are not already installed
 		List<ResolvedPackage> resolvedDependencies = resolveDependenciesToInstallForPackage(resolvedPackage)
-		println "Dependencies to install"
-		resolvedDependencies.findAll { !profile.hasDependency(it.descriptor) }?.each { ResolvedPackage dependency ->
-			println dependency.name
-		}
+		List<ResolvedPackage> dependenciesToInstall = resolvedDependencies.findAll { !profile.hasDependency(it.descriptor) }
+		if(dependenciesToInstall?.size() > 0) {
 
-		/*
-		// Check if package exists in local repo
-		findParams = [mcversion: mcversion, packageName: pkgName, packageVersion: pkgVersion]
-		MinecraftPackage pkgToInstall = evaluate(new File("scripts/find_local_package.groovy"))
-		if(pkgToInstall == null) {
-			// Check if package exists in remote repository
-			pkgToInstall = evaluate(new File("scripts/find_remote_package.groovy"))
-
-			if(pkgToInstall == null) {
-				println " X> Error, unable to find package '${pkgName}'"
-				System.exit(1)
-			} else {
-				PACKAGES.put(pkgToInstall.name, [descriptor: pkgToInstall, location:"remote", installed: profile.hasDependency(pkgToInstall)])
-				println " -> Package '${pkgToInstall.mcversion}:${pkgToInstall.name}:${pkgToInstall.version}' was found in remote repository"
-			}
-		} else {
-			println " -> Package '${pkgToInstall.mcversion}:${pkgToInstall.name}:${pkgToInstall.version}' was found in local repository"
-			PACKAGES.put(pkgToInstall.name, [descriptor: pkgToInstall, location:"local", installed: profile.hasDependency(pkgToInstall)])
-		}
-
-		// Check if package is already installed on profile
-		if(profile.hasDependency(pkgToInstall)) {
-			println " X> Package '${pkgToInstall.mcversion}:${pkgToInstall.name}:${pkgToInstall.version}' already installed on profile '${profile.name}'"
-			System.exit(1)
-		}
-
-		// Iterate on package dependencies
-		pkgToInstall.dependencies?.each { MinecraftPackageDescriptor pkgDependency ->
-
-			// Check if profile has dependency installed
-			if(profile.hasDependency(pkgDependency)) {
-				PACKAGES.put(pkgDependency.name, [descriptor: pkgDependency, location:"local", installed: true])
-			} else {
-
-				// Check if dependency exists in local repo
-				findParams = [mcversion: pkgDependency.mcversion, packageName: pkgDependency.name, packageVersion: pkgDependency.version]
-				MinecraftPackage dependency = evaluate(new File("scripts/find_local_package.groovy"))
-				if(dependency == null) {
-					// Check if dependency exists in remote repository
-					dependency = evaluate(new File("scripts/find_remote_package.groovy"))
-
-					if(dependency == null) {
-						println " X> Error, unable to find dependency '${dependency.name}'"
-						System.exit(1)
-					} else {
-						PACKAGES.put(dependency.name, [descriptor: dependency, location:"remote", installed: false])
-						println " -> Dependency '${dependency.name}' was found in remote repository"
-					}
-				} else {
-					println " -> Dependency '${dependency.name}' was found in local repository"
-					PACKAGES.put(dependency.name, [descriptor: dependency, location:"local", installed: false])
-				}
-			}
-		}
-
-		// Check if dependencies should be downloaded
-		def dependenciesToDownload = PACKAGES.findAll{ key, value -> 
-			key != pkgToInstall.name && (value.location == "remote" || value.installed == false)
-		}
-		if(dependenciesToDownload != null && dependenciesToDownload.size() > 0){
-			
 			// Prompt user
-			def dependenciesNames = []
-			dependenciesToDownload.each { key, value ->
-				dependenciesNames.add(value.descriptor.name + ":" + value.descriptor.version)
-			}
-
+			def dependenciesNames = dependenciesToInstall.collect { it.descriptor.name }
 			String promptStr = "> The package you want to install requires other packages [${dependenciesNames.join(', ')}]. "
 			promptStr += "Would you like to download and install them ? [y/n] "
 
@@ -316,32 +315,40 @@ if(SCRIPT_OPTIONS.i) {
 				println " -> Cancelled"
 				System.exit(0)
 			}
-		}
 
-		// Download required packages
-		def packagesToDownload = PACKAGES.findAll{ key, value -> 
-			value.location == "remote"
-		}
-		packagesToDownload?.each { key, value ->
-			MinecraftPackage downloadedPackage = null
-			downloadParams = [packageToDownload: value.descriptor]
-			downloadedPackage = evaluate(new File("scripts/download_package.groovy"))
-			if(downloadedPackage == null) {
-				println " X> Error, unable to download package '${value.descriptor.mcversion}:${value.descriptor.name}:${value.descriptor.version}' !"
-				println " X> Abord installation..."
-				System.exit(1)
+			// Download each dependency
+			dependenciesToInstall.findAll{ it.location == ResolvedPackage.LOCATION_REMOTE }?.each { ResolvedPackage dependency ->
+				// Download it
+				MinecraftPackage downloadedPackage = null
+				downloadParams = [packageToDownload: dependency.descriptor]
+				downloadedPackage = evaluate(new File("scripts/download_package.groovy"))
+				if(downloadedPackage == null) {
+					println " X> Error, unable to download package '${dependency.descriptor.mcversion}:${dependency.descriptor.name}:${dependency.descriptor.version}' !"
+					println " X> Abord installation..."
+					System.exit(1)
+				}
 			}
 		}
 
-		// Install dependencies
-		def dependenciesToInstall = PACKAGES.findAll{ key, value ->	
-			key != pkgToInstall.name && value.installed == false 
-		}?.values()*.descriptor
-		dependenciesToInstall?.each { MinecraftPackageDescriptor descriptor ->
-			installParams = [pkgDescriptor: descriptor, profile: profile]
+		// Download package
+		MinecraftPackage downloadedPackage = null
+		downloadParams = [packageToDownload: resolvedPackageDescriptor]
+		downloadedPackage = evaluate(new File("scripts/download_package.groovy"))
+		if(downloadedPackage == null) {
+			println " X> Error, unable to download package '${resolvedPackageDescriptor.mcversion}:${resolvedPackageDescriptor.name}:${resolvedPackageDescriptor.version}' !"
+			println " X> Abord installation..."
+			System.exit(1)
+		}
+
+		// Sort dependencies by install priority
+		List<ResolvedPackage> dependenciesByPriority = dependenciesToInstall?.sort{ it.descriptor.priority }
+
+		// Install each dependency by priority
+		dependenciesByPriority?.each { ResolvedPackage dependency ->
+			installParams = [pkgDescriptor: dependency.descriptor, profile: profile]
 			def success = evaluate(new File("scripts/install_package.groovy"))
 			if(success) {
-				profile.addDependency(descriptor)
+				profile.addDependency(dependency.descriptor)
 			} else {
 				println " X> Error, unable to install dependency '${descriptor.name}'"
 				println " X> Abord installation"
@@ -350,19 +357,18 @@ if(SCRIPT_OPTIONS.i) {
 		}
 
 		// Install package
-		installParams = [pkgDescriptor: pkgToInstall, profile: profile]
+		installParams = [pkgDescriptor: resolvedPackageDescriptor, profile: profile]
 		def success = evaluate(new File("scripts/install_package.groovy"))
 		if(success) {
-			profile.addDependency(pkgToInstall)
+			profile.addDependency(resolvedPackageDescriptor)
 		} else {
-			println " X> Error, unable to install package '${pkgToInstall.name}'"
+			println " X> Error, unable to install dependency '${descriptor.name}'"
 			println " X> Abord installation"
 			System.exit(1)
 		}
 
 		// Save profile config file
 		profile.save()
-		*/
 		System.exit(0)
 
 	} 

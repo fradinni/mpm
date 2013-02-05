@@ -20,9 +20,10 @@ if(xml.minecraft?.size() < 1) {
 }
 
 def packages = [:]
+def mcversion = MINECRAFT_VERSION_FILE.text
 
-if(OPTION_ARGUMENTS?.size()>0) {
-	def version = OPTION_ARGUMENTS[0]
+if(OPTION_ARGUMENTS?.size()>0 || mcversion) {
+	version = OPTION_ARGUMENTS[0] ?: mcversion
 	def currentMinecraftVersion = xml.minecraft.find{ it.@version == version }
 
 	if(currentMinecraftVersion != null) {
