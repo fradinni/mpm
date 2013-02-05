@@ -30,12 +30,23 @@ if(pkgDescriptor.installType == "native") {
 	ant.unzip(  src: pkgArchive.absolutePath,
 	            dest: tempJarDir.absolutePath,
 	            overwrite:"true")
+
+	// Test if profile already has a native library
+	def hasNative = profile.dependencies.find { it.installType == "native"} != null
 			
 	// Merge package files to JAR and exclude META-INF directory
 	ant.zip(destfile: new File(MPM_PROFILES_DIRECTORY, profile.name+"/bin/minecraft.jar.tmp")) {
-		zipfileset(src: new File(MPM_PROFILES_BACKUP_DIRECTORY, "bin/minecraft.jar")) {
-			exclude(name: '''**/META-INF/**''')
+		// If profile already has a native library, use active profile's JAR as src instead of default profile's JAR
+		if(hasNative) {
+			zipfileset(src: new File(MPM_PROFILES_DIRECTORY, profile.name+"/bin/minecraft.jar")) {
+				exclude(name: '''**/META-INF/**''')
+			}
+		} else {
+			zipfileset(src: new File(MPM_PROFILES_BACKUP_DIRECTORY, "bin/minecraft.jar")) {
+				exclude(name: '''**/META-INF/**''')
+			}
 		}
+		
 		fileset(dir: tempJarDir.absolutePath) {
 			exclude(name: '''**/META-INF/**''')
 		}			
