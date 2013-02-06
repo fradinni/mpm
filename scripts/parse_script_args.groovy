@@ -15,6 +15,9 @@ SCRIPT.with {
 	   argName: "mcVersion",
 	   "List available Minecraft packages"
 	)
+	li (longOpt: "list-installed", 
+	   "List installed Minecraft's packages for active profile"
+	)
 	i (longOpt: "install", 
 	  argName:"mcVersion:pkgName:pkgVersion",
 	  'Install Minecraft package'

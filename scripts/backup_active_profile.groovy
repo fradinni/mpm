@@ -89,7 +89,7 @@ backupMinecraftInstallModifications = { File parentDirectory, relativePath = "",
 			def defaultDir = getDefaultFile(relativePath, file)
 			def profileDir = getProfileFile(relativePath, file)
 
-			if(file.name != "bin") {
+			if(file.name != "bin" && file.name != "resources") {
 				if(!defaultDir.exists() && !profileDir.exists()) {
 					profileDir.mkdirs()
 				}

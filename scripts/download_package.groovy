@@ -25,6 +25,10 @@ try {
 
 	// Save package xml descriptor
 	new File(destDescriptor).write(XmlUtil.serialize(pkgToDownload.xml))
+
+	// Add package to local repo packages list
+	evaluate(new File("scripts/update_local_repo_xml.groovy"))
+
 } catch (Exception e) {
 	println e.message
 	return null

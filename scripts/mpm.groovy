@@ -234,6 +234,23 @@ if(SCRIPT_OPTIONS.l) {
 	System.exit(0)
 }
 
+// LIST INSTALLED PACKAGES
+if(SCRIPT_OPTIONS.li) {
+
+	MinecraftProfile activeProfile = new MinecraftProfile(new File(MPM_PROFILES_DIRECTORY, MPM_ACTIVE_PROFILE.text+".mcp"))
+
+	println "\n -> Installed packages for profile '${activeProfile.name}':"
+	if(activeProfile.dependencies?.size() > 0) {
+		activeProfile.dependencies.sort{ a, b -> ((a.priority <=> b.priority) ?: (a.name <=> b.name)) }.each { dependency ->
+			println "      - ${dependency.name}:${dependency.version}"
+		}
+	} else {
+		println "      - No dependency installed"
+	}
+
+	System.exit(0)
+}
+
 // INSTALL
 if(SCRIPT_OPTIONS.i) {
 	
@@ -296,9 +313,10 @@ if(SCRIPT_OPTIONS.i) {
 
 		// Check if package is already installed on current profile
 		if(profile.hasDependency(resolvedPackageDescriptor)) {
-			println " X> Package '${resolvedPackageDescriptor.name}' already installed on profile '${profile.name}'"
+			println " X> Package '${resolvedPackageDescriptor.name}' is already installed on profile '${profile.name}'"
 			System.exit(1)
 		}
+
 
 		// Check if package requires other dependencies which are not already installed
 		List<ResolvedPackage> resolvedDependencies = resolveDependenciesToInstallForPackage(resolvedPackage)
@@ -344,11 +362,13 @@ if(SCRIPT_OPTIONS.i) {
 		List<ResolvedPackage> dependenciesByPriority = dependenciesToInstall?.sort{ it.descriptor.priority }
 
 		// Install each dependency by priority
+		def profileDependencies = profile.dependencies
 		dependenciesByPriority?.each { ResolvedPackage dependency ->
 			installParams = [pkgDescriptor: dependency.descriptor, profile: profile]
 			def success = evaluate(new File("scripts/install_package.groovy"))
 			if(success) {
-				profile.addDependency(dependency.descriptor)
+				profileDependencies.add(dependency.descriptor)
+				//profile.addDependency(dependency.descriptor)
 			} else {
 				println " X> Error, unable to install dependency '${descriptor.name}'"
 				println " X> Abord installation"
@@ -379,5 +399,162 @@ if(SCRIPT_OPTIONS.i) {
 
 	System.exit(0)
 }
+
+// REMOVE
+if(SCRIPT_OPTIONS.r) {
+	// Get active profile as uninstall profile
+	def uninstallProfileName = MPM_ACTIVE_PROFILE.text
+
+	// Get mincraft version
+	def mcversion = getMinecraftVersion()
+	def pkgName = null
+	def pkgVersion = null
+
+	// Check if params are specified
+	if(OPTION_ARGUMENTS.size() > 0) {
+		def optionArguments = OPTION_ARGUMENTS[0].split(':', -1)
+		if(optionArguments.size() == 1) {
+			pkgName = optionArguments[0]
+		}
+		if(optionArguments.size() == 2) {
+			pkgName = optionArguments[0]
+			pkgVersion = optionArguments[1]
+		}
+		if(optionArguments.size() == 3) {
+			mcversion = optionArguments[0]
+			pkgName = optionArguments[1]
+			pkgVersion = optionArguments[2]
+		}
+
+		if(uninstallProfileName == "default") {
+			println " X> You cannot remove package from 'default' profile"
+			System.exit(1)
+		}
+
+		// Load profile
+		MinecraftProfile profile = null
+		try {
+			profile = new MinecraftProfile(new File(MPM_PROFILES_DIRECTORY, uninstallProfileName+".mcp"))
+		} catch (Exception e) {
+			println " X> Unable to find profile '${installProfileName}'"
+			System.exit(1)
+		}
+
+		/////////////////////////////////////////////////////////////////////////////////////////
+		// Start
+
+		// Resolve package
+		resolveParams = [packageName: pkgName, packageVersion: pkgVersion, mcversion: mcversion, localOnly: true]
+		ResolvedPackage resolvedPackage = evaluate(new File("scripts/resolve_package.groovy"))
+		if(resolvedPackage == null) {
+			println " X> Error, unable to find package '${pkgName}'"
+			System.exit(1)
+		}
+
+		// Get descriptor of resolved package
+		MinecraftPackageDescriptor resolvedPackageDescriptor = resolvedPackage.descriptor
+
+		// Check if package is already installed on current profile
+		if(!profile.hasDependency(resolvedPackageDescriptor)) {
+			println " X> Package '${resolvedPackageDescriptor.name}' is not installed on profile '${profile.name}'"
+			System.exit(1)
+		}
+
+		// Test if profile has dependencies linked to this package
+		def profilePackages = []
+		def linkedPackages = []
+		profile.dependencies.each { MinecraftPackageDescriptor dependency ->
+
+			// Resolve dependency in local repo
+			resolveParams = [packageName: dependency.name, packageVersion: dependency.version, mcversion: dependency.mcversion, localOnly: true]
+			ResolvedPackage resolvedDependency = evaluate(new File("scripts/resolve_package.groovy"))
+			if(resolvedDependency == null) {
+				println " X> Error, unable to find package '${pkgName}'"
+				System.exit(1)
+			}
+
+			if(dependency.name != resolvedPackage.name) {
+				profilePackages.add(resolvedDependency)
+				if(resolvedDependency.descriptor.dependencies.find { it.name == resolvedPackage.name }) {
+					linkedPackages.add(resolvedDependency.descriptor)
+				}
+			}
+		}
+
+		// If dependencies are linked to this package, prompt user for delete
+		if(linkedPackages.size() > 0) {
+			def dependenciesNames = linkedPackages.collect { it.name +":"+it.version }
+			String promptStr = "> Some Minecraft's dependencies require this package to work !\nPackage [${resolvedPackage.name}:${resolvedPackage.version}] and these dependencies [${dependenciesNames.join(', ')}] will be REMOVED !\n"
+			promptStr += "\nWould you like to continue ? [y/n] "
+
+			def prompt = System.console().readLine(promptStr)
+			if(prompt.toLowerCase() != "y") {
+				println " -> Cancelled"
+				System.exit(0)
+			}
+		} else {
+			String promptStr = "> Package [${resolvedPackage.name}:${resolvedPackage.version}] will be REMOVED !\n"
+			promptStr += "\nWould you like to continue ? [y/n] "
+
+			def prompt = System.console().readLine(promptStr)
+			if(prompt.toLowerCase() != "y") {
+				println " -> Cancelled"
+				System.exit(0)
+			}
+		}
+
+		// Use set active profile to backup minecraft install
+		profileParams = [name: profile.name]
+		success = evaluate(new File("scripts/set_active_profile.groovy"))
+		if(!success) {
+			println "Unable to backup Minecraft install directory !"
+			System.exit(1)
+		}
+
+		// Uninstall each linked package
+		linkedPackages.each { MinecraftPackage linkedPackage ->
+			removeParams = [pkgDescriptor: linkedPackage, parentPkgDescriptor: resolvedPackage.descriptor, profile: profile]
+			boolean success = evaluate(new File("scripts/remove_package.groovy"))
+			if(success) {
+				profile.removeDependency(linkedPackage)
+				println " -> Package [${linkedPackage.name}:${linkedPackage.version}] was removed from profile '${profile.name}'"
+			} else {
+				println " X> Error, unable to remove dependency '${linkedPackage.name}'"
+				System.exit(1)
+			}
+		}
+
+		// Uninstal package
+		removeParams = [pkgDescriptor: resolvedPackage.descriptor, profile: profile]
+		boolean success = evaluate(new File("scripts/remove_package.groovy"))
+		if(success) {
+			profile.removeDependency(resolvedPackage.descriptor)
+		} else {
+			println " X> Error, unable to remove package '${resolvedPackage.descriptor.name}'"
+			System.exit(1)
+		}
+
+		// Use set active profile to update minecraft install
+		profileParams = [name: profile.name, noBackup: true]
+		success = evaluate(new File("scripts/set_active_profile.groovy"))
+		if(!success) {
+			println "Unable to update Minecraft install directory !"
+			System.exit(1)
+		} 
+
+		println " -> Package [${resolvedPackage.descriptor.name}:${resolvedPackage.descriptor.version}] was removed from profile '${profile.name}'"
+
+
+		// Save profile
+		profile.save()
+		System.exit(0)
+
+	}
+	// If not, display installed packages for current profile
+	else {
+		SCRIPT.usage()
+	}
+}
+
 
 SCRIPT.usage()

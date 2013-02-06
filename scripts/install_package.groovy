@@ -14,12 +14,12 @@ def ant = new AntBuilder()
 println " -> Installing package '${pkgDescriptor.name}' (${pkgDescriptor.installType})..."
 
 
-// Initialize install datas array for this profile
+/*// Initialize install datas array for this profile
 def INSTALL_DATAS = profile.installDatas
 
 // Initialize package install datas
 def PKG_INSTALL_DATAS_INDEX = profile.installDatas.packagesInstallDatas.size()+1
-def PKG_INSTALL_DATAS = new PackageInstallDatas(pkgDescriptor, PKG_INSTALL_DATAS_INDEX)
+def PKG_INSTALL_DATAS = new PackageInstallDatas(pkgDescriptor, PKG_INSTALL_DATAS_INDEX)*/
 
 // NATIVE INSTALLATION
 if(pkgDescriptor.installType == "native") {
@@ -42,8 +42,10 @@ if(pkgDescriptor.installType == "native") {
 	            dest: tempJarDir.absolutePath,
 	            overwrite:"true")
 
-	///////////////////////////////////////////////////////////////////////////////
+	/*///////////////////////////////////////////////////////////////////////////////
 	// Generate INSTALL DATAS
+
+	print " -> Generate package installation datas... "
 
 	// Load Minecraft Jar files
 	def jarEntries =  []
@@ -51,8 +53,25 @@ if(pkgDescriptor.installType == "native") {
 	Enumeration entries = jar.entries()
 	while (entries.hasMoreElements()) {
     	JarEntry file = entries.nextElement()
-    	jarEntries.add(file)
-	    /*java.io.File f = new java.io.File(destDir + java.io.File.separator + file.getName());
+    	PKG_INSTALL_DATAS.addFile(file.name)
+    	//jarEntries.add(file)
+	}
+
+	println "[Done]"
+
+	// Load mod files
+	def modFiles = []
+	def modFilesBase = tempJarDir.absolutePath
+	tempJarDir.eachFileRecurse { File file ->
+		if(file.isFile()) {
+			modFiles.add(file.absolutePath.substring(modFilesBase.length()+1))
+		}
+	}*/
+
+	//new File("modFiles.txt").write(modFiles.join('\n'))
+
+
+	 /*java.io.File f = new java.io.File(destDir + java.io.File.separator + file.getName());
 	    if (file.isDirectory()) { // if its a directory, create it
 	    	f.mkdir();
 	    	continue;
@@ -64,10 +83,6 @@ if(pkgDescriptor.installType == "native") {
 	    }
 	    fos.close();
 	    is.close();*/
-	}
-
-	//def entriesNames = entries*.name
-	new File("./output.txt").write((jarEntries*.name).sort().join("\n"))
 
 	///////////////////////////////////////////////////////////////////////////////
 
@@ -117,8 +132,8 @@ new AntBuilder().copy(toDir: MINECRAFT_INSTALL_DIR, overwrite: true) {
 	fileset(dir: new File(MPM_PROFILES_DIRECTORY, profile.name))
 }
 
-// Add package's install datas to Profile's install datas
+/*// Add package's install datas to Profile's install datas
 INSTALL_DATAS.addPackageInstallDatas(PKG_INSTALL_DATAS)
-INSTALL_DATAS.save()
+INSTALL_DATAS.save()*/
 
 return true

@@ -5,7 +5,7 @@ class MinecraftProfile {
 
 	def file
 	def profileXml
-	ProfileInstallDatas installDatas
+	//ProfileInstallDatas installDatas
 
 	List<MinecraftPackageDescriptor> dependencies = []
 
@@ -14,7 +14,7 @@ class MinecraftProfile {
 	public MinecraftProfile(file) {
 		this.file = file
 		this.profileXml = new XmlSlurper().parse(file)
-		this.installDatas = new ProfileInstallDatas(this)
+		//this.installDatas = new ProfileInstallDatas(this)
 		// Load dependencies descriptors
 		loadDependencies()
 	}
@@ -32,9 +32,9 @@ class MinecraftProfile {
 		return profileXml.name.text()
 	}
 
-	public ProfileInstallDatas getInstallDatas() {
+	/*public ProfileInstallDatas getInstallDatas() {
 		return new ProfileInstallDatas(this)
-	}
+	}*/
 
 	public String getMinecraftVersion() {
 		return profileXml.mcversion.text()
@@ -50,6 +50,11 @@ class MinecraftProfile {
 			println " -> Dependency '${dependency.name}' added to profile."
 		} 
 	}	
+
+	public void removeDependency(MinecraftPackageDescriptor dependency) {
+		def dep = dependencies.find { it.name == dependency.name }
+		dependencies.remove(dep)
+	}
 	
 	public String toString() {
 		return name
@@ -61,12 +66,13 @@ class MinecraftProfile {
 				name(this.name)
 				mcversion(getMinecraftVersion())
 				dependencies() {
-					this.dependencies.each { dependency ->
+					this.dependencies.sort{ it.priority }.each { dependency ->
 						'package'(
 							name: dependency.name, 
 							version: dependency.version, 
 							mcversion: dependency.mcversion, 
-							type: dependency.type
+							type: dependency.type,
+							priority: dependency.priority
 						)
 					}
 				}

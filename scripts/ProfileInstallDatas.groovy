@@ -36,9 +36,14 @@ class ProfileInstallDatas {
 		def xml = new StreamingMarkupBuilder().bind {
 			"install-datas"(profile: profile.name) {
 				packagesInstallDatas.each { PackageInstallDatas datas ->
-					"package-datas"(name: datas.name, version: datas.version, mcversion: datas.mcversion, type: datas.type, installType: datas.installType) {
-
-					}
+					"package-datas"(
+						name: datas.name, 
+						version: datas.version, 
+						mcversion: datas.mcversion, 
+						type: datas.type, 
+						installType: datas.installType, 
+						index: datas.index
+					)
 				}
 			}
 		}

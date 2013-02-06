@@ -9,6 +9,9 @@ class PackageInstallDatas {
 	String type
 	String installType
 
+	List installedFiles = []
+
+	// Create new PackageInstallDatas
 	public PackageInstallDatas(MinecraftPackage pkg, int index) {
 		this.index = index
 		this.name = pkg.name
@@ -18,6 +21,7 @@ class PackageInstallDatas {
 		this.installType = pkg.installType
 	}
 
+	// Load existing PackageInstallDatas
 	public PackageInstallDatas(xml) {
 		this.index = xml.@index
 		this.name = xml.@name
@@ -25,6 +29,15 @@ class PackageInstallDatas {
 		this.mcversion = xml.@mcversion
 		this.type = xml.@type
 		this.installType = xml.@installType
+
+		xml.file?.each { jarFile ->
+			installedFiles.add( jarFile.@name )
+		}
+	}
+
+
+	public void addFile(String fileName) {
+		installedFiles.add( fileName )
 	}
 
 
@@ -36,8 +49,12 @@ class PackageInstallDatas {
 				mcversion: mcversion, 
 				type: type, 
 				installType: installType,
-				index: datas
-			)
+				index: index
+			) {
+				installedFiles.each { installedFile ->
+					"file"(name: installedFiles)
+				}
+			}
 		}
 	}
 

@@ -18,6 +18,34 @@ def mcversion = findParams.mcversion
 def pkgName = findParams.packageName
 def pkgVersion = findParams.packageVersion
 
+
+// If only package name is specified
+if(mcversion && pkgName && !pkgVersion) {
+	// Get remote xml file
+	def xmlPkgList
+	try {
+		xmlPkgList = new XmlParser().parse(new File(MPM_REPO_DIRECTORY, 'packages.xml'))
+	} catch (Exception e) {
+		//println "Unable to connect to local repository ! Please check you connection...\n"
+		return null
+	}
+
+	def minecraftVersionNode = xmlPkgList.minecraft.find{ it.@version == mcversion }
+	if(!minecraftVersionNode) {
+		return null
+	}
+
+	def availablePkgVersions = minecraftVersionNode.findAll{ it.@name == pkgName }.sort{ it.@version }.reverse()
+	if(!availablePkgVersions || availablePkgVersions.size() == 0) {
+		return null
+	}
+
+	def resolvedPackage = availablePkgVersions[0]
+	mcversion = resolvedPackage.@mcversion
+	pkgname = resolvedPackage.@name
+	pkgVersion = resolvedPackage.@version
+}
+
 // Build package descriptor file URL
 def descriptorURL = "${mcversion}/${pkgName}/${pkgVersion}/package.xml"
 

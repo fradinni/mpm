@@ -15,7 +15,7 @@ if(!profileDir.exists()) {
 
 def noBackup = false
 
-if(OPTION_ARGUMENTS.size() == 2 && OPTION_ARGUMENTS[1] == "--no-backup") {
+if( (OPTION_ARGUMENTS.size() == 2 && OPTION_ARGUMENTS[1] == "--no-backup") || profileParams.noBackup) {
 	noBackup = true
 }
 
