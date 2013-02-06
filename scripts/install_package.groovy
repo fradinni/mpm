@@ -46,13 +46,12 @@ if(pkgDescriptor.installType == "native") {
 	// Generate INSTALL DATAS
 
 	// Load Minecraft Jar files
-	List<JarEntry> jarEntries =  []
+	def jarEntries =  []
 	JarFile jar = new JarFile(new File(MPM_PROFILES_BACKUP_DIRECTORY, "bin/minecraft.jar"))
 	Enumeration entries = jar.entries()
 	while (entries.hasMoreElements()) {
     	JarEntry file = entries.nextElement()
     	jarEntries.add(file)
-    	if(file.isDirectory()) println file.name
 	    /*java.io.File f = new java.io.File(destDir + java.io.File.separator + file.getName());
 	    if (file.isDirectory()) { // if its a directory, create it
 	    	f.mkdir();
@@ -67,25 +66,20 @@ if(pkgDescriptor.installType == "native") {
 	    is.close();*/
 	}
 
+	//def entriesNames = entries*.name
+	new File("./output.txt").write((jarEntries*.name).sort().join("\n"))
+
 	///////////////////////////////////////////////////////////////////////////////
 
-
-	// Test if profile already has a native library
-	def hasNative = profile.dependencies.find { it.installType == "native" } != null
-			
 	// Merge package files to JAR and exclude META-INF directory
+	def srcMinecraftJAR = new File(MPM_PROFILES_DIRECTORY, profile.name+"/bin/minecraft.jar")
+	if(!srcMinecraftJAR.exists()) {
+		srcMinecraftJAR = new File(MPM_PROFILES_BACKUP_DIRECTORY, "bin/minecraft.jar")
+	}
 	ant.zip(destfile: new File(MPM_PROFILES_DIRECTORY, profile.name+"/bin/minecraft.jar.tmp")) {
-		// If profile already has a native library, use active profile's JAR as src instead of default profile's JAR
-		if(hasNative) {
-			zipfileset(src: new File(MPM_PROFILES_DIRECTORY, profile.name+"/bin/minecraft.jar")) {
-				exclude(name: '''**/META-INF/**''')
-			}
-		} else {
-			zipfileset(src: new File(MPM_PROFILES_BACKUP_DIRECTORY, "bin/minecraft.jar")) {
-				exclude(name: '''**/META-INF/**''')
-			}
+		zipfileset(src: srcMinecraftJAR) {
+			exclude(name: '''**/META-INF/**''')
 		}
-		
 		fileset(dir: tempJarDir.absolutePath) {
 			exclude(name: '''**/META-INF/**''')
 		}			

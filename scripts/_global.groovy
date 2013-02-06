@@ -11,8 +11,8 @@ GLOBAL = 1
 //System.properties.putAll( ["http.proxyHost":"proxy.intra.bt.com", "http.proxyPort":"8080"] )
 
 // Set remote repository URL
-REMOTE_REPO_URL = 'C:\\Users\\WAXAYAZ\\Desktop\\MPM Workspace\\Repository'
-//REMOTE_REPO_URL = 'http://nfradin.fr/mpm/repo'
+//REMOTE_REPO_URL = 'C:\\Users\\WAXAYAZ\\Desktop\\MPM Workspace\\Repository'
+REMOTE_REPO_URL = 'http://nfradin.fr/mpm/repo'
 
 // Get user directory path
 USER_DIRECTOY = new File(System.getProperty('user.home'))

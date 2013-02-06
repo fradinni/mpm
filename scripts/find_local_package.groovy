@@ -26,7 +26,7 @@ def xml
 try {
 	xml = new XmlParser().parse(new File(MPM_REPO_DIRECTORY, descriptorURL))
 } catch (Exception e) {
-	//println "Unable to find Minecraft v${mcversion} package '${pkgName}' in local repository..."
+	println "Unable to find Minecraft v${mcversion} package '${pkgName}' in local repository...\n${e.message}"
 	return null
 }
 

@@ -13,15 +13,15 @@ if(!profileDir.exists()) {
 	return false
 }
 
-if(activeProfile != "default") {	
+def noBackup = false
+
+if(OPTION_ARGUMENTS.size() == 2 && OPTION_ARGUMENTS[1] == "--no-backup") {
+	noBackup = true
+}
+
+if(activeProfile != "default" && !noBackup) {	
 	def filesToCopy = evaluate(new File("scripts/backup_active_profile.groovy"))
 	filesToCopy?.each { key, value ->
-		
-		/*println " -> Copy File"
-		println "   Src: " + key
-		println "   To : " + value
-		println "" */
-		
 		new AntBuilder().copy(file: key, toFile: value, overwrite: true)
 	}
 }
