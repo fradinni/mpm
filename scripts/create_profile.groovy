@@ -37,7 +37,12 @@ if(profileDir.exists()) {
 		}
 		projectDescriptorFile.write(XmlUtil.serialize(xml))
 
+		/*new AntBuilder().copy(toDir: profileDir) {
+			fileset(dir: MPM_PROFILES_BACKUP_DIRECTORY)
+		}*/
+
 	} catch (Exception e) {
+		println e.message
 		if(profileDir.exists()) {
 			new AntBuilder().delete(dir: profileDir)
 		}
@@ -48,7 +53,7 @@ if(profileDir.exists()) {
 	}
 
 	// Prompt user
-	promptStr = "Set profile '${profileName}' as active ? [y/n]"
+	/*promptStr = "Set profile '${profileName}' as active ? [y/n]"
 	prompt = System.console().readLine(promptStr)
 	if(prompt.toLowerCase() != "y") {
 		System.exit(0)
@@ -62,7 +67,7 @@ if(profileDir.exists()) {
 		System.exit(1)
 	} else {
 		println " -> Active profile was set to '${profileName}'"
-	}
+	}*/
 }
 
 return new MinecraftProfile(new File(MPM_PROFILES_DIRECTORY, "${profileName}.mcp"))

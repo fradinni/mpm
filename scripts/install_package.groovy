@@ -68,6 +68,17 @@ else if(pkgDescriptor.installType == "copy") {
 	ant.copy(file: pkgArchive, toDir: destDir)
 }
 
+
+// ARCHIVE EXTRACTION
+else if(pkgDescriptor.installType == "extract") {
+	File pkgArchive = new File(MPM_REPO_DIRECTORY, pkgDescriptor.packageFileURL)
+	File destDir = new File(MPM_PROFILES_DIRECTORY, profile.name+"/"+pkgDescriptor.installDir)
+	if(!destDir.exists()) {
+		destDir.mkdir()
+	}
+	ant.unzip(src: pkgArchive, dest: destDir)
+}
+
 // Copy profile's files to Minecraft directory
 new AntBuilder().copy(toDir: MINECRAFT_INSTALL_DIR, overwrite: true) {
 	fileset(dir: new File(MPM_PROFILES_DIRECTORY, profile.name))

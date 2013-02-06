@@ -55,18 +55,19 @@ resolveDependenciesToInstallForPackage = { ResolvedPackage parentPackage ->
 
 ///////////////////////////////////////////////////////////////////////////////
 
-println "===================================================="
+/*println "===================================================="
 println "= Minecraft Package Manager v1.0                   " 
 println "= --------------------------------------------------"
 println "= System properties:"
 println "=   Minecraft version:  " + getMinecraftVersion()
 println "=   Minecraft profile:  " + MPM_ACTIVE_PROFILE.text
-//println "=   Minecraft install:  " + MINECRAFT_INSTALL_DIR.absolutePath
-//println "=   JAVA version:       " + getJavaVersion()
-//println "=   Operating system:   " + System.getProperty("os.name")
-println "===================================================="
+println "=   Minecraft install:  " + MINECRAFT_INSTALL_DIR.absolutePath
+println "=   JAVA version:       " + getJavaVersion()
+println "=   Operating system:   " + System.getProperty("os.name")
+println "===================================================="*/
 
-if(MPM_ACTIVE_PROFILE.text == "default") {
+/*if(MPM_ACTIVE_PROFILE.text == "default") {
+
 
 	println "\nHello ${System.getProperty("user.name")} !"
 	println ""
@@ -123,8 +124,7 @@ if(MPM_ACTIVE_PROFILE.text == "default") {
 	System.console().readLine("")
 	println ""
 	println ""
-	SCRIPT.usage()
-}
+}*/
 
 // HELP
 if(SCRIPT_OPTIONS.h) {
@@ -184,7 +184,7 @@ if(SCRIPT_OPTIONS.dp) {
 		profileParams = [name: OPTION_ARGUMENTS[0]]
 		def success = evaluate(new File("scripts/delete_profile.groovy"))
 		if(!success) {
-			println " -> Unable to delete profile '${OPTION_ARGUMENTS[0]}' !"
+			println " X> Unable to delete profile '${OPTION_ARGUMENTS[0]}' !"
 			System.exit(1)
 		}
 

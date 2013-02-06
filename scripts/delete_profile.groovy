@@ -6,6 +6,11 @@
 
 def profileName = profileParams.name
 
+if(profileName == MPM_ACTIVE_PROFILE.text) {
+	println " X> Unable to delete active profile"
+	return false
+}
+
 try {
 
 	// Check if profile directory exists

@@ -6,8 +6,15 @@
 
 def activeProfileName = MPM_ACTIVE_PROFILE.text
 
-def DEFAULT_PROFILE_DIR = new File(MPM_PROFILES_DIRECTORY, "default")
+def DEFAULT_PROFILE_DIR = MPM_PROFILES_BACKUP_DIRECTORY
 def CURRENT_PROFILE_DIR = new File(MPM_PROFILES_DIRECTORY, activeProfileName)
+
+
+def getDiffs = {File dir1, File dir2 ->
+
+
+
+}
 
 
 def getDefaultFile = { String relativePath, File file ->
@@ -28,6 +35,16 @@ backupMinecraftInstallModifications = { File parentDirectory, relativePath = "",
 
 	// Parse parent directory's files
 	parentDirectory.eachFile { File file ->
+
+		/*if(file.isDirectory()) {
+			println " + " + relativePath + file.name
+
+			if(file != )
+
+			files.putAll(backupMinecraftInstallModifications(file, relativePath+file.name+"/", files))
+		} else {
+			println " - " + relativePath + file.name
+		}*/
 
 		if(file.isFile()) {
 			def defaultFile = getDefaultFile(relativePath, file)
@@ -78,7 +95,7 @@ backupMinecraftInstallModifications = { File parentDirectory, relativePath = "",
 				}
 
 				// Iterate on folder's files
-				files = backupMinecraftInstallModifications(file, file.name+"/", files)
+				files = backupMinecraftInstallModifications(file, relativePath + file.name+"/", files)
 			}
 			
 		}
@@ -88,4 +105,5 @@ backupMinecraftInstallModifications = { File parentDirectory, relativePath = "",
 }
 
 // Backup minecraft install directory modifications
+println " -> Backup installation of active profile. Please wait..."
 backupMinecraftInstallModifications(MINECRAFT_INSTALL_DIR)
