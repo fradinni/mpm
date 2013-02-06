@@ -31,6 +31,14 @@ class MinecraftProfile {
 		return profileXml.name.text()
 	}
 
+	public File getInstallDatas() {
+		def installDatasFile = new File(MPM_PROFILES_DIRECTORY, name + "/pkg-install-datas.xml")
+		if(!installDatasFile.exists()) {
+			installDatasFile = new ProfileInstallDatas(installDatasFile)
+		}
+		return installDatasFile
+	}
+
 	public String getMinecraftVersion() {
 		return profileXml.mcversion.text()
 	}
@@ -71,4 +79,8 @@ class MinecraftProfile {
 		file.write(XmlUtil.serialize(xml))
 	}
 
+
+	public static MinecraftProfile getProfileForName(String profileName) {
+		return new MinecraftProfile(new File(MPM_PROFILES_DIRECTORY, profileName+".mcp"))
+	}
 }

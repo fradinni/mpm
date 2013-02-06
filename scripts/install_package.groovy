@@ -9,6 +9,13 @@ MinecraftPackage pkgDescriptor = installParams.pkgDescriptor
 def ant = new AntBuilder()
 
 println " -> Installing package '${pkgDescriptor.name}' (${pkgDescriptor.installType})..."
+
+
+// Initialize install datas array for this package
+def packageInstallDatas = [:]
+def packageInstallDatasDir =  profile.installDatasDirectory
+
+
 // NATIVE INSTALLATION
 if(pkgDescriptor.installType == "native") {
 
