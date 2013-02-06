@@ -1,3 +1,6 @@
+import java.util.jar.JarEntry
+import java.util.jar.JarFile
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Install package in specified profile
@@ -11,10 +14,12 @@ def ant = new AntBuilder()
 println " -> Installing package '${pkgDescriptor.name}' (${pkgDescriptor.installType})..."
 
 
-// Initialize install datas array for this package
-def packageInstallDatas = [:]
-def packageInstallDatasDir =  profile.installDatasDirectory
+// Initialize install datas array for this profile
+def INSTALL_DATAS = profile.installDatas
 
+// Initialize package install datas
+def PKG_INSTALL_DATAS_INDEX = profile.installDatas.packagesInstallDatas.size()+1
+def PKG_INSTALL_DATAS = new PackageInstallDatas(pkgDescriptor, PKG_INSTALL_DATAS_INDEX)
 
 // NATIVE INSTALLATION
 if(pkgDescriptor.installType == "native") {
@@ -24,7 +29,6 @@ if(pkgDescriptor.installType == "native") {
 		println " X> Error, unable to find archive for packge '${pkgDescriptor.name}'"
 		return false
 	}
-
 
 	// Create a temp directory to build new minecraft.jar
 	File tempJarDir = new File(MPM_PROFILES_DIRECTORY, profile.name+"/_temp")
@@ -38,8 +42,36 @@ if(pkgDescriptor.installType == "native") {
 	            dest: tempJarDir.absolutePath,
 	            overwrite:"true")
 
+	///////////////////////////////////////////////////////////////////////////////
+	// Generate INSTALL DATAS
+
+	// Load Minecraft Jar files
+	List<JarEntry> jarEntries =  []
+	JarFile jar = new JarFile(new File(MPM_PROFILES_BACKUP_DIRECTORY, "bin/minecraft.jar"))
+	Enumeration entries = jar.entries()
+	while (entries.hasMoreElements()) {
+    	JarEntry file = entries.nextElement()
+    	jarEntries.add(file)
+    	if(file.isDirectory()) println file.name
+	    /*java.io.File f = new java.io.File(destDir + java.io.File.separator + file.getName());
+	    if (file.isDirectory()) { // if its a directory, create it
+	    	f.mkdir();
+	    	continue;
+	    }
+	    java.io.InputStream is = jar.getInputStream(file); // get the input stream
+	    java.io.FileOutputStream fos = new java.io.FileOutputStream(f);
+	    while (is.available() > 0) {  // write contents of 'is' to 'fos'
+	    	fos.write(is.read());
+	    }
+	    fos.close();
+	    is.close();*/
+	}
+
+	///////////////////////////////////////////////////////////////////////////////
+
+
 	// Test if profile already has a native library
-	def hasNative = profile.dependencies.find { it.installType == "native"} != null
+	def hasNative = profile.dependencies.find { it.installType == "native" } != null
 			
 	// Merge package files to JAR and exclude META-INF directory
 	ant.zip(destfile: new File(MPM_PROFILES_DIRECTORY, profile.name+"/bin/minecraft.jar.tmp")) {
@@ -90,5 +122,9 @@ else if(pkgDescriptor.installType == "extract") {
 new AntBuilder().copy(toDir: MINECRAFT_INSTALL_DIR, overwrite: true) {
 	fileset(dir: new File(MPM_PROFILES_DIRECTORY, profile.name))
 }
+
+// Add package's install datas to Profile's install datas
+INSTALL_DATAS.addPackageInstallDatas(PKG_INSTALL_DATAS)
+INSTALL_DATAS.save()
 
 return true

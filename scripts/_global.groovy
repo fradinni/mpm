@@ -35,7 +35,7 @@ MPM_PROFILES_DIRECTORY = new File(MPM_DIRECTORY, 'profiles')
 // Set MPM_PROFILES_BACKUP directory
 MPM_PROFILES_BACKUP_DIRECTORY = new File(MPM_PROFILES_DIRECTORY, 'default')
 
-// Set file wher eactive profile is stored
+// Set file where active profile is stored
 MPM_ACTIVE_PROFILE = new File(MPM_PROFILES_DIRECTORY, "000_active")
 
 ///////////////////////////////////////////////////////////////////////////////

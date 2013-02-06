@@ -1,3 +1,6 @@
+import groovy.xml.StreamingMarkupBuilder
+import groovy.xml.XmlUtil
+
 class MinecraftPackageDescriptor {
 
 	String name
@@ -18,4 +21,12 @@ class MinecraftPackageDescriptor {
 		this.type = ( xmlNode.'@type' ? xmlNode.'@type' : xmlNode.type?.text() )
 
 	}
+
+	public getDescriptorXml() {
+		def xml = new StreamingMarkupBuilder().bind {
+			"package"(name: name, description: description, version: version, mcversion: mcversion, type: type)
+		}
+		return xml
+	}
+
 }

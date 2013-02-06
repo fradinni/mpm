@@ -5,6 +5,7 @@ class MinecraftProfile {
 
 	def file
 	def profileXml
+	ProfileInstallDatas installDatas
 
 	List<MinecraftPackageDescriptor> dependencies = []
 
@@ -13,7 +14,7 @@ class MinecraftProfile {
 	public MinecraftProfile(file) {
 		this.file = file
 		this.profileXml = new XmlSlurper().parse(file)
-		
+		this.installDatas = new ProfileInstallDatas(this)
 		// Load dependencies descriptors
 		loadDependencies()
 	}
@@ -31,12 +32,8 @@ class MinecraftProfile {
 		return profileXml.name.text()
 	}
 
-	public File getInstallDatas() {
-		def installDatasFile = new File(MPM_PROFILES_DIRECTORY, name + "/pkg-install-datas.xml")
-		if(!installDatasFile.exists()) {
-			installDatasFile = new ProfileInstallDatas(installDatasFile)
-		}
-		return installDatasFile
+	public ProfileInstallDatas getInstallDatas() {
+		return new ProfileInstallDatas(this)
 	}
 
 	public String getMinecraftVersion() {
@@ -80,7 +77,7 @@ class MinecraftProfile {
 	}
 
 
-	public static MinecraftProfile getProfileForName(String profileName) {
-		return new MinecraftProfile(new File(MPM_PROFILES_DIRECTORY, profileName+".mcp"))
+	public File getDirectory() {
+		return new File(file.absolutePath.substring(0, file.absolutePath.lastIndexOf('.')))
 	}
 }
