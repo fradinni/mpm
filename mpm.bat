@@ -1,2 +1,2 @@
 @echo off
-groovy -cp scripts scripts\mpm.groovy %*
+groovy -cp scripts\objects\ scripts\mpm.groovy %*
