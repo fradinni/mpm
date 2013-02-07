@@ -5,6 +5,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 def profileName = profileParams.name
+def noPrompt = profileParams.noPrompt ? profileParams.noPrompt : false
 
 if(profileName == MPM_ACTIVE_PROFILE.text) {
 	println " X> Unable to delete active profile"
@@ -16,10 +17,12 @@ try {
 	// Check if profile directory exists
 	def profileDir = new File(MPM_PROFILES_DIRECTORY, profileName)
 	if(profileDir.exists()) {
-		def prompt = System.console().readLine("> Profile '${profileName}' will be deleted ! Are you sure ? [y/n] ")
-		if(prompt.toLowerCase() != 'y') {
-			println " -> Cancelled."
-			System.exit(1)
+		if(!noPrompt) {
+			def prompt = System.console().readLine("> Profile '${profileName}' will be deleted ! Are you sure ? [y/n] ")
+			if(prompt.toLowerCase() != 'y') {
+				println " -> Cancelled."
+				System.exit(1)
+			}
 		}
 	} else {
 		println " -> Profile '${profileName}' was not found !"

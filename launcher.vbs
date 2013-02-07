@@ -19,4 +19,4 @@ end if
 
 Set WshShell = WScript.CreateObject("WScript.Shell")
 
-WshShell.Run """" & WScript.Arguments(0) & """" & sargs, 0, False
+WshShell.Run """" & WScript.Arguments(0) & """" & sargs, 1, True

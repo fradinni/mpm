@@ -7,6 +7,7 @@ import groovy.xml.StreamingMarkupBuilder
 import groovy.xml.XmlUtil
 
 def profileName = profileParams.name
+def noPrompt = profileParams.noPrompt ? profileParams.noPrompt : false
 
 def projectDescriptorFile = new File(MPM_PROFILES_DIRECTORY, "${profileName}.mcp")
 def profileDir = new File(MPM_PROFILES_DIRECTORY, profileName)
@@ -16,11 +17,13 @@ if(profileDir.exists()) {
 	return null
 } else {
 
-	// Prompt user
-	String promptStr = "Create profile with name '${profileName}' ? [y/n]"
-	def prompt = System.console().readLine(promptStr)
-	if(prompt.toLowerCase() != "y") {
-		System.exit(0)
+	if(!noPrompt) {
+		// Prompt user
+		String promptStr = "Create profile with name '${profileName}' ? [y/n]"
+		def prompt = System.console().readLine(promptStr)
+		if(prompt.toLowerCase() != "y") {
+			System.exit(0)
+		}
 	}
 
 	try {
