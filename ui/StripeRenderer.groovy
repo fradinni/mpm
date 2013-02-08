@@ -4,19 +4,7 @@ import javax.swing.*;
 class StripeRenderer extends DefaultListCellRenderer {
     public Component getListCellRendererComponent(JList list, Object pkg,
             int index, boolean isSelected, boolean cellHasFocus) {
-        /*Label label = (JLabel) super.getListCellRendererComponent(list, value,
-                index, isSelected, cellHasFocus);*/
-        
-        /*
-        if(isSelected) {
-            leftBorder.start = leftBorder.end = new Color(28, 100, 209)
-            textBlock.start = textBlock.end = new Color(37, 134, 215)
-            rightBorder.start = rightBorder.end = new Color(37, 134, 215)
-            textBlock.start = textBlock.end = new Color(157, 195, 224)
-            rightBorder.start = rightBorder.end = new Color(255, 255, 255)
-        }
-        */
-
+       
 
         def colors = [
             "modloader": [
@@ -63,7 +51,24 @@ class StripeRenderer extends DefaultListCellRenderer {
                     "middle": new Color(242, 242, 242),
                     "right" : new Color(242, 242, 242)
                 ]
-            ]
+            ],
+            "empty": [
+                "default": [
+                    "text": "#888888",
+                    "left": new Color(86, 86, 86), /* GRAY */,
+                    "middle": Color.WHITE,
+                    "right" : Color.WHITE
+                ],
+                "selected": [
+                    "text": "#888888",
+                    "left": new Color(86, 86, 86) /* GRAY */,
+                    "middle": new Color(234, 234, 234),
+                    "right" : new Color(234, 234, 234)
+                ],
+                "focus": [
+
+                ]
+            ],
 
         ]
 
@@ -83,7 +88,7 @@ class StripeRenderer extends DefaultListCellRenderer {
         def selectedBorderColor = colors."${pkg.type}"."selected"."border"?."color" ?: defaultBorderColor
 
         def emptyText = "<html><font size=\"4\">&nbsp;</font></html>"
-        def text = "<html><p><font size=\"4\" color=\"${isSelected ? defaultFontColor : selectedFontColor}\"><b>${isSelected ? '<i>' : ''}${pkg.name} ${pkg.version}${isSelected ? '</i>' : ''}</b></font></p><p>${pkg.type}</p></html>"
+        def text = "<html><p><font size=\"4\" color=\"${isSelected ? defaultFontColor : selectedFontColor}\"><b>${isSelected ? '<i>' : ''}${pkg.name} ${pkg.version}${isSelected ? '</i>' : ''}</b></font></p><p>${pkg.type && pkg.type != 'empty' ? pkg.type : ''}</p></html>"
 
         JPanel item = new JPanel();
         item.setLayout(new BoxLayout(item, BoxLayout.LINE_AXIS));

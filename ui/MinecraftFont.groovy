@@ -15,8 +15,8 @@ public class MinecraftFont {
     }
   }
 
-  public static Font getFont() {
-    def name = "minecrafter.ttf"
+  public static Font getFont(int size = 12) {
+    def name = "minecraft_z2font.ttf"
     Font font = null;
     if (cache != null) {
       if ((font = cache.get(name)) != null) {
@@ -27,6 +27,7 @@ public class MinecraftFont {
     try {
       InputStream is = MinecraftFont.class.getResourceAsStream(fName);
       font = Font.createFont(Font.TRUETYPE_FONT, is);
+      font = font.deriveFont(Font.PLAIN, size);
       println "Font '${name}' was loaded !" 
     } catch (Exception ex) {
       ex.printStackTrace();

@@ -1,3 +1,5 @@
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import groovy.swing.*
 import javax.swing.*
 import java.awt.*
@@ -13,10 +15,15 @@ class MainWindow {
 	def mainPanel
 	def currentProfilePanel
 
+	def activeProfileLabel
+	def installedPackagesDetailsEditor
+	def availablePackagesDetailsEditor
+
 	def availablePackagesList
 	def installedPackagesList
 
 	def MPM_ACTIVE_PROFILE
+	def REMOTE_REPO_URL
 
 	public MainWindow() {
 		initShell()
@@ -28,6 +35,7 @@ class MainWindow {
 		evaluate("_global.groovy", ["INIT_COMMON": 0, "OPTION_ARGUMENTS":[]])
 
 		MPM_ACTIVE_PROFILE = shellBinding.getVariable("MPM_ACTIVE_PROFILE")
+		REMOTE_REPO_URL = shellBinding.getVariable("REMOTE_REPO_URL")
 	}
 
 	public evaluate(script, variables=null) {
@@ -51,6 +59,8 @@ class MainWindow {
 				buildProfilesMenu()
 				updateInstalledPackages(profileName)
 				updateAvailablePackages()
+				activeProfileLabel.text = MPM_ACTIVE_PROFILE.text
+
 				if(res) {
 					statusBar.setStatusBarProgress("Profile '${profileName}' activated !", 0, 3, 3)
 					JOptionPane.showMessageDialog(null, "Profile '${profileName}' is now active !")
@@ -148,12 +158,32 @@ class MainWindow {
 
 	public void updateInstalledPackages(profileName) {
 		def packages = InstalledPackages.refresh(profileName, shell)
-		installedPackagesList.listData = packages ? packages : []
+		if(!packages) {
+			def emptyPkg = new MinecraftPackageDescriptor()
+			if(profileName == 'default') {
+				emptyPkg.name = "Cannot install package on this profile..."
+			} else {
+				emptyPkg.name = "No package installed on this profile..."
+			}
+			emptyPkg.version = ""
+			emptyPkg.type = "empty"
+			packages = [emptyPkg]
+		}
+		installedPackagesList.listData = packages
 	} 
 
 	public void updateAvailablePackages() {
 		def availablePackages = AvailablePackages.refresh(shell)
-		availablePackagesList.listData = availablePackages ? availablePackages/*.sort{a,b -> (a.type <=> b.type) ?: (a.name <=> b.name)}*/ : []
+		if(availablePackages) {
+			availablePackages = availablePackages.sort{a,b -> (a.priority <=> b.priority) ?: (a.type <=> b.type) ?: (a.name <=> b.name) ?: (b.version <=> a.version)}
+		} else {
+			def emptyPkg = new MinecraftPackageDescriptor()
+			emptyPkg.name ="No more packages available..."
+			emptyPkg.version = ""
+			emptyPkg.type = "empty"
+			availablePackages = [emptyPkg]
+		}
+		availablePackagesList.listData = availablePackages
 	}
 
 	public void buildProfilesMenu() {
@@ -218,7 +248,6 @@ class MainWindow {
 		///////////////////////////////////////////////////////////////////////
 		// Application Components
 
-
 		// Method - Creates menu bar
 		def customMenuBar = {
 			swingBuilder.menuBar {
@@ -233,18 +262,57 @@ class MainWindow {
 	    }
 
 	    def installedPackagesPanel = {
-	    	swingBuilder.scrollPane(id:'installedPackagesScroll', constraints: BorderLayout.WEST) {
+	    	swingBuilder.scrollPane(constraints: BorderLayout.WEST, horizontalScrollBarPolicy: ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER) {
 		    	installedPackagesList = list(fixedCellWidth: 360,
 		    								 fixedCellHeight: 40,
 		    								 cellRenderer: new StripeRenderer())
 	    	}
+	    	installedPackagesList.addListSelectionListener(new ListSelectionListener() {
+				public void valueChanged(ListSelectionEvent evt) {
+					def selection = installedPackagesList.getSelectedValue()
+					def url
+					if(REMOTE_REPO_URL.startsWith("http")) {
+						url = new URL(REMOTE_REPO_URL + "/" + selection.packageDetailsURL)
+					} else {
+						url = new URL("file:///" + REMOTE_REPO_URL + "/" + selection.packageDetailsURL)
+					}
+					installedPackagesDetailsEditor.setPage(url)
+				}
+	    	});
 	    }
 
 	    def availablePackagesPanel = {
-	    	swingBuilder.scrollPane(id: 'availablePackagesScroll', constraints: BorderLayout.WEST) {
+	    	swingBuilder.scrollPane(constraints: BorderLayout.WEST, horizontalScrollBarPolicy: ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER) {
 		    	availablePackagesList = list(fixedCellWidth: 360,
 		    								 fixedCellHeight: 40,
 		    								 cellRenderer: new StripeRenderer())
+	    	}
+	    	availablePackagesList.addListSelectionListener(new ListSelectionListener() {
+				public void valueChanged(ListSelectionEvent evt) {
+					def selection = availablePackagesList.getSelectedValue()
+					def url
+					if(REMOTE_REPO_URL.startsWith("http")) {
+						url = new URL(REMOTE_REPO_URL + "/" + selection.packageDetailsURL)
+					} else {
+						url = new URL("file:///" + REMOTE_REPO_URL + "/" + selection.packageDetailsURL)
+					}
+					availablePackagesDetailsEditor.setPage(url)
+				}
+	    	});
+	    }
+
+
+	    def installedPackagesDetailsPanel = {
+	    	swingBuilder.scrollPane(constraints: BorderLayout.CENTER, horizontalScrollBarPolicy: ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER) {
+	    		installedPackagesDetailsEditor = editorPane()
+	    		installedPackagesDetailsEditor.setEditable(false)
+	    	}
+	    }
+
+	    def availablePackagesDetailsPanel = {
+	    	swingBuilder.scrollPane(constraints: BorderLayout.CENTER, horizontalScrollBarPolicy: ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER) {
+	    		availablePackagesDetailsEditor = editorPane()
+	    		availablePackagesDetailsEditor.setEditable(false)
 	    	}
 	    }
 
@@ -254,7 +322,7 @@ class MainWindow {
 	    // Build Application
 	    statusBar = new StatusBar()
 	    statusBar.textWhenEmpty = "Ready."
-		frame = swingBuilder.frame(title:"Minecraft Package Manager", defaultCloseOperation:JFrame.EXIT_ON_CLOSE, size:[800,500], show:true, locationRelativeTo: null) {
+		frame = swingBuilder.frame(title:"Minecraft Package Manager", defaultCloseOperation:JFrame.EXIT_ON_CLOSE, size:[1024,700], show:true, locationRelativeTo: null) {
 
 			// Set system look and feel
 			lookAndFeel("system")
@@ -268,16 +336,23 @@ class MainWindow {
 			mainPanel = panel() {
 				borderLayout()
 				panel(constraints: BorderLayout.NORTH) {
-					label(text: "ok")
+					borderLayout()
+					label(icon: new ImageIcon("ui/images/logo_banner_1024.png"), constraints: BorderLayout.NORTH)
+					panel(constraints: BorderLayout.CENTER) {
+						activeProfileLabel = label(text: MPM_ACTIVE_PROFILE.text, font: MinecraftFont.getFont(30))
+						activeProfileLabel.setBorder(BorderFactory.createEmptyBorder(12,0,0,0))
+					}
 				}
 				tabbedPane(id: 'tabs', constraints: BorderLayout.CENTER) {
-					panel(title: 'Installed Packages', font: MinecraftFont.getFont()) {
+					panel(title: 'Installed Packages') {
 						borderLayout()
 						installedPackagesPanel()
+						installedPackagesDetailsPanel()
 					}
 					panel(title: 'Available Packages') {
 						borderLayout()
 						availablePackagesPanel()
+						availablePackagesDetailsPanel()
 					}
 				}
 			}

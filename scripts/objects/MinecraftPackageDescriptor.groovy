@@ -50,4 +50,8 @@ class MinecraftPackageDescriptor {
 		return "${mcversion}/${name}/${version}/package.xml"
 	}
 
+	public String getPackageDetailsURL() {
+		return "${mcversion}/${name}/${version}/package.html"
+	}
+
 }

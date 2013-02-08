@@ -11,8 +11,8 @@ GLOBAL = 1
 //System.properties.putAll( ["http.proxyHost":"proxy.intra.bt.com", "http.proxyPort":"8080"] )
 
 // Set remote repository URL
-REMOTE_REPO_URL = 'C:\\Users\\WAXAYAZ\\Desktop\\MPM Workspace\\Repository'
-//REMOTE_REPO_URL = 'C:\\Users\\605418644\\desktop\\MPM Workspace\\Repository'
+//REMOTE_REPO_URL = 'C:\\Users\\WAXAYAZ\\Desktop\\MPM Workspace\\Repository'
+REMOTE_REPO_URL = 'C:\\Users\\605418644\\desktop\\MPM Workspace\\Repository'
 
 //REMOTE_REPO_URL = 'http://nfradin.fr/mpm/repo'
 
