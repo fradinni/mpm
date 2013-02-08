@@ -271,7 +271,7 @@ class MainWindow {
 					label(text: "ok")
 				}
 				tabbedPane(id: 'tabs', constraints: BorderLayout.CENTER) {
-					panel(title: 'Installed Packages') {
+					panel(title: 'Installed Packages', font: MinecraftFont.getFont()) {
 						borderLayout()
 						installedPackagesPanel()
 					}
