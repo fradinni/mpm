@@ -1,19 +1,22 @@
-class InstalledPackages {
+class AvailablePackages {
 
-	static Object[] refresh(profileName, shell) {
+	static Object[] refresh(shell) {
 
-		MinecraftProfile activeProfile
+		/*Binding shellBinding = new Binding()
+		GroovyShell shell = new GroovyShell(shellBinding)
+		shell.setVariable("INIT_COMMON", 0)
+		shell.setVariable("OPTION_ARGUMENTS", [])
+		shell.evaluate(new File("scripts/_global.groovy"))*/
+
+		def packages
+		def MINECRAFT_VERSION_FILE = shell.getVariable("MINECRAFT_VERSION_FILE")
 		try {
-			// Retrieve variables from shell
-			MPM_PROFILES_DIRECTORY = shell.getVariable("MPM_PROFILES_DIRECTORY")
-			MPM_ACTIVE_PROFILE = shell.getVariable("MPM_ACTIVE_PROFILE")
-
-			// Retrieve active profile
-			activeProfile = new MinecraftProfile(new File(MPM_PROFILES_DIRECTORY, MPM_ACTIVE_PROFILE.text+".mcp"))
+			packages = shell.evaluate(new File("scripts/available_packages.groovy"))
 		} catch (Exception e) {
+			return e.message
 			return null
 		}
 
-		return activeProfile.dependencies as Object[]
+		return packages.get(MINECRAFT_VERSION_FILE.text) as Object[]
 	}
 }

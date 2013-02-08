@@ -13,7 +13,7 @@ class MainWindow {
 	def mainPanel
 	def currentProfilePanel
 
-	def availablePackages
+	def availablePackagesList
 	def installedPackagesList
 
 	def MPM_ACTIVE_PROFILE
@@ -50,6 +50,7 @@ class MainWindow {
 				statusBar.setStatusBarProgress("Activate profile '${profileName}'...", 0, 3, 2)
 				buildProfilesMenu()
 				updateInstalledPackages(profileName)
+				updateAvailablePackages()
 				if(res) {
 					statusBar.setStatusBarProgress("Profile '${profileName}' activated !", 0, 3, 3)
 					JOptionPane.showMessageDialog(null, "Profile '${profileName}' is now active !")
@@ -150,12 +151,9 @@ class MainWindow {
 		installedPackagesList.listData = packages ? packages : []
 	} 
 
-	public void buildAvailablePackagesPanel(profileName) {
-		swingBuilder.tabs.setTabComponentAt( 1, 
-			swingBuilder.panel() {
-
-	    	}
-		)
+	public void updateAvailablePackages() {
+		def availablePackages = AvailablePackages.refresh(shell)
+		availablePackagesList.listData = availablePackages ? availablePackages/*.sort{a,b -> (a.type <=> b.type) ?: (a.name <=> b.name)}*/ : []
 	}
 
 	public void buildProfilesMenu() {
@@ -235,8 +233,16 @@ class MainWindow {
 	    }
 
 	    def installedPackagesPanel = {
-	    	swingBuilder.scrollPane(constraints: BorderLayout.WEST) {
+	    	swingBuilder.scrollPane(id:'installedPackagesScroll', constraints: BorderLayout.WEST) {
 		    	installedPackagesList = list(fixedCellWidth: 360,
+		    								 fixedCellHeight: 40,
+		    								 cellRenderer: new StripeRenderer())
+	    	}
+	    }
+
+	    def availablePackagesPanel = {
+	    	swingBuilder.scrollPane(id: 'availablePackagesScroll', constraints: BorderLayout.WEST) {
+		    	availablePackagesList = list(fixedCellWidth: 360,
 		    								 fixedCellHeight: 40,
 		    								 cellRenderer: new StripeRenderer())
 	    	}
@@ -269,12 +275,16 @@ class MainWindow {
 						borderLayout()
 						installedPackagesPanel()
 					}
-					panel(title: 'Available Packages')
+					panel(title: 'Available Packages') {
+						borderLayout()
+						availablePackagesPanel()
+					}
 				}
 			}
     	}
     	mainPanel.add(statusBar, BorderLayout.SOUTH)
     	updateInstalledPackages(MPM_ACTIVE_PROFILE.text)
+    	updateAvailablePackages()
     	//buildInstalledPackagesPanel(MPM_ACTIVE_PROFILE.text)
     	//buildAvailablePackagesPanel(MPM_ACTIVE_PROFILE.text)
 	}

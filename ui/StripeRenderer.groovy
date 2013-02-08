@@ -6,9 +6,8 @@ class StripeRenderer extends DefaultListCellRenderer {
             int index, boolean isSelected, boolean cellHasFocus) {
         /*Label label = (JLabel) super.getListCellRendererComponent(list, value,
                 index, isSelected, cellHasFocus);*/
-
         def emptyText = "<html><font size=\"4\">&nbsp;</font></html>"
-        def text = "<html><p><font size=\"4\" color=\"${isSelected ? 'black' : 'white'}\"><b>${isSelected ? '<i>' : ''}${pkg.name} ${pkg.version}${isSelected ? '</i>' : ''}</b></font></p><p>${pkg.type}</p></html>"
+        def text = "<html><p><font size=\"4\" color=\"${isSelected ? 'black' : 'white'}\"><b>${isSelected ? '<i>' : ''}${pkg.name}${isSelected ? '</i>' : ''}</b></font></p><p>${pkg.type}</p></html>"
 
         JPanel item = new JPanel();
         item.setLayout(new BoxLayout(item, BoxLayout.LINE_AXIS));
@@ -31,8 +30,10 @@ class StripeRenderer extends DefaultListCellRenderer {
 
         if(isSelected) {
             leftBorder.start = leftBorder.end = new Color(28, 100, 209)
-            textBlock.start = textBlock.end = new Color(37, 134, 215)
-            rightBorder.start = rightBorder.end = new Color(37, 134, 215)
+            /*textBlock.start = textBlock.end = new Color(37, 134, 215)
+            rightBorder.start = rightBorder.end = new Color(37, 134, 215)*/
+            textBlock.start = textBlock.end = new Color(157, 195, 224)
+            rightBorder.start = rightBorder.end = new Color(255, 255, 255)
         }
 
         item.add(leftBorder)
@@ -40,28 +41,5 @@ class StripeRenderer extends DefaultListCellRenderer {
         item.add(rightBorder)
 
         return item
-
-       /* buttonPane.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
-        buttonPane.add(Box.createHorizontalGlue());
-        buttonPane.add(cancelButton);
-        buttonPane.add(Box.createRigidArea(new Dimension(10, 0)));
-        buttonPane.add(setButton);*/
-
-        
-
-        /*GradientLabel label = new GradientLabel(text)
-        //JLabel label = new JLabel(text)
-       
-        if(index%2 == 0) {
-            label.start = new Color(255,229,30)
-        }
-
-        if(isSelected) {
-            label.start = Color.LIGHT_GRAY
-            label.end = Color.LIGHT_GRAY
-        }
-        
-        label.setVerticalAlignment(SwingConstants.TOP);
-        return label;*/
     }
 }
