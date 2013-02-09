@@ -6,9 +6,9 @@ import java.util.zip.ZipEntry
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-MinecraftProfile profile = removeParams.profile
-MinecraftPackage pkgDescriptor = removeParams.pkgDescriptor
-MinecraftPackage parentPkgDescriptor = removeParams.parentPkgDescriptor
+def profile = removeParams.profile
+def pkgDescriptor = removeParams.pkgDescriptor
+def parentPkgDescriptor = removeParams.parentPkgDescriptor
 
 def ant = new AntBuilder()
 
@@ -18,12 +18,12 @@ if(pkgDescriptor.installType == "native") {
 
 	// Get profile others native packages
 	def resolvedDependencies = []
-	profile.dependencies.each { MinecraftPackageDescriptor dependency ->
+	profile.dependencies.each { dependency ->
 		
 		if(dependency.name != pkgDescriptor.name && dependency.name != parentPkgDescriptor?.name) {
 			// Resolve local package
 			resolveParams = [packageName: dependency.name, packageVersion: dependency.version, mcversion: dependency.mcversion, localOnly: true]
-			ResolvedPackage resolvedPackage = evaluate(new File("scripts/resolve_package.groovy"))
+			def resolvedPackage = evaluate(new File("scripts/resolve_package.groovy"))
 			if(resolvedPackage == null) {
 				println " X> Error, unable to find package '${pkgName}'"
 				System.exit(1)
