@@ -40,18 +40,18 @@ class MinecraftProfile {
 		return profileXml.mcversion.text()
 	}
 
-	public boolean hasDependency(MinecraftPackageDescriptor dependency) {
+	public boolean hasDependency(dependency) {
 		return ( dependencies.find{ it.name == dependency.name } != null )
 	}
 
-	public void addDependency(MinecraftPackageDescriptor dependency) {
+	public void addDependency(dependency) {
 		if(!hasDependency(dependency)) {
 			dependencies.add(dependency)
 			println " -> Dependency '${dependency.name}' added to profile."
 		} 
 	}	
 
-	public void removeDependency(MinecraftPackageDescriptor dependency) {
+	public void removeDependency(dependency) {
 		def dep = dependencies.find { it.name == dependency.name }
 		dependencies.remove(dep)
 	}

@@ -22,8 +22,11 @@ class MainWindow {
 	def availablePackagesList
 	def installedPackagesList
 
+	def selectedPackageToInstall
+
 	def MPM_ACTIVE_PROFILE
 	def REMOTE_REPO_URL
+	def MPM_PROFILES_DIRECTORY
 
 	public MainWindow() {
 		initShell()
@@ -36,13 +39,28 @@ class MainWindow {
 
 		MPM_ACTIVE_PROFILE = shellBinding.getVariable("MPM_ACTIVE_PROFILE")
 		REMOTE_REPO_URL = shellBinding.getVariable("REMOTE_REPO_URL")
+		MPM_PROFILES_DIRECTORY = shellBinding.getVariable("MPM_PROFILES_DIRECTORY")
 	}
 
-	public evaluate(script, variables=null) {
+	public evaluate(script, variables=null, path=null) {
+		path = path ? path : "scripts/"
 		variables?.each { variable, value ->
 			shell.setVariable(variable, value)
 		}
-		return shell.evaluate(new File("scripts/"+script))
+		return shell.evaluate(new File(path+script))
+	}
+
+
+	public getActiveProfile() {
+		MinecraftProfile profile = null
+		try {
+			profile = new MinecraftProfile(new File(MPM_PROFILES_DIRECTORY, MPM_ACTIVE_PROFILE.text +".mcp"))
+		} catch (Exception e) {
+			println " X> Unable to find profile '${MPM_ACTIVE_PROFILE.text}'"
+			return null
+		}
+
+		return profile
 	}
 
 	public boolean setActiveProfile(profileName) {
@@ -156,9 +174,190 @@ class MainWindow {
 		}
 	}
 
+	//
+	// Method - Resolve dependencies to install for a resolved package
+	//
+	// @return List<ResolvedPackage> resolvedDependencies
+	//
+	public resolveDependenciesToInstallForPackage(parentPackage) {
+		
+		def resolvedPackages=[]
+
+		// Iterate on package dependencies
+		parentPackage.descriptor.dependencies?.each { dependency ->
+			
+			// Resolve dependency
+			def resolveParams = [packageName: dependency.name, packageVersion: dependency.version, mcversion: dependency.mcversion]
+			def resolvedPackage = evaluate("resolve_package.groovy", ["resolveParams": resolveParams])
+			if(resolvedPackage == null) {
+				println " X> Error, unable to find package '${pkgName}'"
+				return
+			}
+
+			// Check if resolved dependency requires other dependencies
+			resolvedPackages.addAll(resolveDependenciesToInstallForPackage(resolvedPackage))
+
+			// Add resolved dependency to resolvedPackages list if not already added
+			if(	resolvedPackages.find{ it.descriptor.name != resolvedPackage.descriptor.name } == null) {
+				resolvedPackages.add(resolvedPackage)
+			}
+
+			// If already added but version is more recent, add it to list
+			else if(resolvedPackages.find{ it.descriptor.name == resolvedPackage.descriptor.name && 
+					resolvedPackage.descriptor.version > it.descriptor.version }) {
+				resolvedPackages.add(resolvedPackage)
+			}
+		}
+
+		return resolvedPackages
+	}
+
+	public void installPackage() {
+		new Thread(new Runnable() {
+			public void run() {
+				// Get active profile as install profile
+				def installProfileName = MPM_ACTIVE_PROFILE.text
+
+				def pkgName = selectedPackageToInstall?.name
+				def pkgVersion = selectedPackageToInstall?.version
+				def mcversion = selectedPackageToInstall?.mcversion
+
+				statusBar.setStatusBarProgress("Installing package [${pkgName}:${pkgVersion}]...", 0, 10, 0)
+				evaluate("backup_active_profile.groovy")
+
+				if(installProfileName == "default") {
+					println " X> You cannot install package on 'default' profile"
+				}
+
+				// Load profile
+				MinecraftProfile profile = null
+				try {
+					profile = new MinecraftProfile(new File(MPM_PROFILES_DIRECTORY, installProfileName+".mcp"))
+				} catch (Exception e) {
+					println " X> Unable to find profile '${installProfileName}'"
+					return
+				}
+
+
+		
+				/////////////////////////////////////////////////////////////////////////////////////////
+				// Start
+
+				statusBar.setStatusBarProgress("resolving package [${pkgName}:${pkgVersion}]...", 0, 10, 1)
+				// Resolve package
+				def resolveParams = [packageName: pkgName, packageVersion: pkgVersion, mcversion: mcversion]
+				def resolvedPackage = evaluate("resolve_package.groovy", ["resolveParams":resolveParams])
+				if(resolvedPackage == null) {
+					println " X> Error, unable to find package '${pkgName}'"
+					return
+				}
+
+				// Get descriptor of resolved package
+				def resolvedPackageDescriptor = resolvedPackage.descriptor
+
+				// Check if package is already installed on current profile
+				if(profile.hasDependency(resolvedPackageDescriptor)) {
+					println " X> Package '${resolvedPackageDescriptor.name}' is already installed on profile '${profile.name}'"
+					return
+				}
+
+				statusBar.setStatusBarProgress("Resolve package dependencies...", 0, 10, 2)
+				// Check if package requires other dependencies which are not already installed
+				def resolvedDependencies = resolveDependenciesToInstallForPackage(resolvedPackage)
+				def dependenciesToInstall = resolvedDependencies.findAll { !profile.hasDependency(it.descriptor) }
+				if(dependenciesToInstall?.size() > 0) {
+
+					// Prompt user
+					/*
+					def dependenciesNames = dependenciesToInstall.collect { it.descriptor.name }
+					String promptStr = "> The package you want to install requires other packages [${dependenciesNames.join(', ')}]. "
+					promptStr += "Would you like to download and install them ? [y/n] "
+
+					def prompt = System.console().readLine(promptStr)
+					if(prompt.toLowerCase() != "y") {
+						println " -> Cancelled"
+						System.exit(0)
+					}
+					*/
+					// Download each dependency
+					dependenciesToInstall.findAll{ it.location == ResolvedPackage.LOCATION_REMOTE }?.each { dependency ->
+						
+						statusBar.setStatusBarProgress("Downloading dependency [${dependency?.descriptor?.name}:${dependency?.descriptor.version}] ...", 0, 5, 3)
+						// Download it
+						MinecraftPackage downloadedPackage = null
+						def downloadParams = [packageToDownload: dependency.descriptor]
+						downloadedPackage = evaluate("download_package.groovy", ["downloadParams": downloadParams])
+						if(downloadedPackage == null) {
+							println " X> Error, unable to download package '${dependency.descriptor.mcversion}:${dependency.descriptor.name}:${dependency.descriptor.version}' !"
+							println " X> Abord installation..."
+							return
+						}
+					}
+					
+				}
+
+
+				statusBar.setStatusBarProgress("Downloading package [${resolvedPackageDescriptor?.name}:${resolvedPackageDescriptor.version}] ...", 0, 5, 3)
+				// Download package
+				def downloadedPackage = null
+				def downloadParams = [packageToDownload: resolvedPackageDescriptor]
+				downloadedPackage = evaluate("download_package.groovy", ["downloadParams" : downloadParams])
+				if(downloadedPackage == null) {
+					println " X> Error, unable to download package '${resolvedPackageDescriptor.mcversion}:${resolvedPackageDescriptor.name}:${resolvedPackageDescriptor.version}' !"
+					println " X> Abord installation..."
+					System.exit(1)
+				}
+
+				// Sort dependencies by install priority
+				def dependenciesByPriority = dependenciesToInstall?.sort{ it.descriptor.priority }
+
+				// Install each dependency by priority
+				def profileDependencies = profile.dependencies
+				dependenciesByPriority?.each { dependency ->
+					statusBar.setStatusBarProgress("Install dependency [${dependency.descriptor.name}:${dependency.descriptor.version}] ...", 0, 5, 4)
+					def installParams = [pkgDescriptor: dependency.descriptor, profile: profile]
+					def success = evaluate("install_package.groovy", ["installParams" : installParams])
+					if(success) {
+						profileDependencies.add(dependency.descriptor)
+						//profile.addDependency(dependency.descriptor)
+					} else {
+						println " X> Error, unable to install dependency '${descriptor.name}'"
+						println " X> Abord installation"
+						System.exit(1)
+					}
+				}
+
+				statusBar.setStatusBarProgress("Install package [${resolvedPackageDescriptor.name}:${resolvedPackageDescriptor.version}] ...", 0, 5, 4)
+
+				// Install package
+				def installParams = [pkgDescriptor: resolvedPackageDescriptor, profile: profile]
+				def success = evaluate("install_package.groovy", ["installParams" : installParams])
+				if(success) {
+					profile.addDependency(resolvedPackageDescriptor)
+				} else {
+					println " X> Error, unable to install dependency '${descriptor.name}'"
+					println " X> Abord installation"
+					System.exit(1)
+				}
+
+				// Save profile config file
+				statusBar.setStatusBarProgress("Save active profile...", 0, 5, 5)
+				profile.save()
+				updateInstalledPackages(installProfileName)
+				updateAvailablePackages()
+
+				statusBar.setStatusBarProgressFinished()
+
+				JOptionPane.showMessageDialog(null, "Package '${resolvedPackageDescriptor.name}' installed !");
+			}
+		}).start()
+	}
+
 	public void updateInstalledPackages(profileName) {
 		def packages = InstalledPackages.refresh(profileName, shell)
-		if(!packages) {
+		if(packages) {
+			packages = packages.sort{a,b -> (a.type <=> b.type) ?: (a.name <=> b.name) ?: (b.version <=> a.version)}
+		} else {
 			def emptyPkg = new MinecraftPackageDescriptor()
 			if(profileName == 'default') {
 				emptyPkg.name = "Cannot install package on this profile..."
@@ -175,7 +374,7 @@ class MainWindow {
 	public void updateAvailablePackages() {
 		def availablePackages = AvailablePackages.refresh(shell)
 		if(availablePackages) {
-			availablePackages = availablePackages.sort{a,b -> (a.priority <=> b.priority) ?: (a.type <=> b.type) ?: (a.name <=> b.name) ?: (b.version <=> a.version)}
+			availablePackages = availablePackages.sort{a,b -> (a.type <=> b.type) ?: (a.name <=> b.name) ?: (b.version <=> a.version)}
 		} else {
 			def emptyPkg = new MinecraftPackageDescriptor()
 			emptyPkg.name ="No more packages available..."
@@ -245,6 +444,8 @@ class MainWindow {
 
 	public void show() {
 		
+		def instalButton
+
 		///////////////////////////////////////////////////////////////////////
 		// Application Components
 
@@ -272,11 +473,18 @@ class MainWindow {
 					def selection = installedPackagesList.getSelectedValue()
 					def url
 					if(REMOTE_REPO_URL.startsWith("http")) {
-						url = new URL(REMOTE_REPO_URL + "/" + selection.packageDetailsURL)
+						url = new URL(REMOTE_REPO_URL + "/" + selection?.packageDetailsURL)
 					} else {
-						url = new URL("file:///" + REMOTE_REPO_URL + "/" + selection.packageDetailsURL)
+						url = new URL("file:///" + REMOTE_REPO_URL + "/" + selection?.packageDetailsURL)
 					}
-					installedPackagesDetailsEditor.setPage(url)
+					try {
+					    URLConnection conn = url.openConnection();
+					    conn.connect();
+					    installedPackagesDetailsEditor.setPage(url)
+					} catch (Exception e) {
+						println "error: ${e.message}"
+					    installedPackagesDetailsEditor.setText("No details available for this package...")
+					} 
 				}
 	    	});
 	    }
@@ -285,18 +493,29 @@ class MainWindow {
 	    	swingBuilder.scrollPane(constraints: BorderLayout.WEST, horizontalScrollBarPolicy: ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER) {
 		    	availablePackagesList = list(fixedCellWidth: 360,
 		    								 fixedCellHeight: 40,
-		    								 cellRenderer: new StripeRenderer())
+		    								 cellRenderer: new StripeRenderer(this))
 	    	}
 	    	availablePackagesList.addListSelectionListener(new ListSelectionListener() {
 				public void valueChanged(ListSelectionEvent evt) {
+					swingBuilder.installButton.setVisible(false)
 					def selection = availablePackagesList.getSelectedValue()
+					selectedPackageToInstall = selection
 					def url
 					if(REMOTE_REPO_URL.startsWith("http")) {
-						url = new URL(REMOTE_REPO_URL + "/" + selection.packageDetailsURL)
+						url = new URL(REMOTE_REPO_URL + "/" + selection?.packageDetailsURL)
 					} else {
-						url = new URL("file:///" + REMOTE_REPO_URL + "/" + selection.packageDetailsURL)
+						url = new URL("file:///" + REMOTE_REPO_URL + "/" + selection?.packageDetailsURL)
 					}
-					availablePackagesDetailsEditor.setPage(url)
+					try {
+					    URLConnection conn = url.openConnection();
+					    conn.connect();
+					    availablePackagesDetailsEditor.setPage(url)
+					} catch (Exception e) {
+					    availablePackagesDetailsEditor.setText("No details available for this package...")
+					} 
+					if(selection && !getActiveProfile().hasDependency(selection)) {
+						swingBuilder.installButton.setVisible(true)
+					}
 				}
 	    	});
 	    }
@@ -310,9 +529,22 @@ class MainWindow {
 	    }
 
 	    def availablePackagesDetailsPanel = {
-	    	swingBuilder.scrollPane(constraints: BorderLayout.CENTER, horizontalScrollBarPolicy: ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER) {
-	    		availablePackagesDetailsEditor = editorPane()
-	    		availablePackagesDetailsEditor.setEditable(false)
+	    	swingBuilder.panel(constraints: BorderLayout.CENTER) {
+	    		borderLayout()
+	    		scrollPane(constraints: BorderLayout.CENTER, horizontalScrollBarPolicy: ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER) {
+		    		availablePackagesDetailsEditor = editorPane()
+		    		availablePackagesDetailsEditor.setEditable(false)
+	    		}
+	    		installButtonPanel = panel(constraints: BorderLayout.SOUTH) {
+	    			//boxLayout(axis:BoxLayout.PAGE_AXIS)
+	    			installButton = button(id: 'installButton', text: "Install package...", alignmentX: Component.CENTER_ALIGNMENT, actionPerformed:{ 
+				          // Button click
+				          installPackage()
+				    })
+	    			installButton.setPreferredSize(new Dimension(640,20))
+	    			installButton.setVisible(false)
+	    		}
+	    		installButtonPanel.setBackground(Color.WHITE)
 	    	}
 	    }
 
@@ -322,7 +554,7 @@ class MainWindow {
 	    // Build Application
 	    statusBar = new StatusBar()
 	    statusBar.textWhenEmpty = "Ready."
-		frame = swingBuilder.frame(title:"Minecraft Package Manager", defaultCloseOperation:JFrame.EXIT_ON_CLOSE, size:[1024,700], show:true, locationRelativeTo: null) {
+		frame = swingBuilder.frame(title:"Minecraft Package Manager", resizable: false, defaultCloseOperation:JFrame.EXIT_ON_CLOSE, size:[1024,700], show:true, locationRelativeTo: null) {
 
 			// Set system look and feel
 			lookAndFeel("system")
@@ -360,7 +592,5 @@ class MainWindow {
     	mainPanel.add(statusBar, BorderLayout.SOUTH)
     	updateInstalledPackages(MPM_ACTIVE_PROFILE.text)
     	updateAvailablePackages()
-    	//buildInstalledPackagesPanel(MPM_ACTIVE_PROFILE.text)
-    	//buildAvailablePackagesPanel(MPM_ACTIVE_PROFILE.text)
 	}
 }

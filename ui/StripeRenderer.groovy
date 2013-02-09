@@ -2,6 +2,13 @@ import java.awt.*;
 import javax.swing.*;
 
 class StripeRenderer extends DefaultListCellRenderer {
+
+    MainWindow mainWindow
+
+    public StripeRenderer(MainWindow mainWindow) {
+        this.mainWindow = mainWindow
+    }
+
     public Component getListCellRendererComponent(JList list, Object pkg,
             int index, boolean isSelected, boolean cellHasFocus) {
        
@@ -72,8 +79,14 @@ class StripeRenderer extends DefaultListCellRenderer {
 
         ]
 
+        def isInstalled = mainWindow?.getActiveProfile()?.hasDependency(pkg) 
+
         def defaultFontColor = colors."${pkg.type}"."default"."text"
         def selectedFontColor = colors."${pkg.type}"."selected"."text" ?: defaultFontColor
+
+        if(isInstalled) {
+            defaultFontColor = selectedFontColor = "#bbbbbb"
+        }
 
         def defaultLeftColor = colors."${pkg.type}"."default"."left"
         def selectedLeftColor = colors."${pkg.type}"."selected"."left" ?: defaultLeftColor
@@ -88,7 +101,7 @@ class StripeRenderer extends DefaultListCellRenderer {
         def selectedBorderColor = colors."${pkg.type}"."selected"."border"?."color" ?: defaultBorderColor
 
         def emptyText = "<html><font size=\"4\">&nbsp;</font></html>"
-        def text = "<html><p><font size=\"4\" color=\"${isSelected ? defaultFontColor : selectedFontColor}\"><b>${isSelected ? '<i>' : ''}${pkg.name} ${pkg.version}${isSelected ? '</i>' : ''}</b></font></p><p>${pkg.type && pkg.type != 'empty' ? pkg.type : ''}</p></html>"
+        def text = "<html><p><font size=\"4\" color=\"${isSelected ? selectedFontColor : defaultFontColor }\"><b>${isSelected ? '<i>' : ''}${pkg.name} ${pkg.version}${isInstalled ? '&nbsp;&nbsp&nbsp( Installed )' : ''}${isSelected ? '</i>' : ''}</b></font></p><p>${pkg.type && pkg.type != 'empty' ? pkg.type : ''}</p></html>"
 
         JPanel item = new JPanel();
         item.setLayout(new BoxLayout(item, BoxLayout.LINE_AXIS));

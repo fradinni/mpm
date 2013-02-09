@@ -7,8 +7,8 @@ import java.util.jar.JarFile
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-MinecraftProfile profile = installParams.profile
-MinecraftPackage pkgDescriptor = installParams.pkgDescriptor
+def profile = installParams.profile
+def pkgDescriptor = installParams.pkgDescriptor
 def ant = new AntBuilder()
 
 println " -> Installing package '${pkgDescriptor.name}' (${pkgDescriptor.installType})..."
