@@ -1,0 +1,77 @@
+body {
+	margin: 0;
+	padding:0;
+	width: 1024px;
+	margin: auto;
+}
+
+.subnav {
+	position: fixed;
+	width: 1024px;
+	height: 34px;
+	top: 0px;
+	border-bottom: 2px solid #000 !important;
+}
+
+.screenshots img {
+	border: 5px solid white;
+	max-height: 250px;
+	margin: 10px;
+}
+
+img.img-rounded {
+	border-color: #45515F;
+}
+
+.screenshots {
+	padding: 10px;
+	margin-bottom: 20px;
+}
+
+
+.banner {
+	margin-top: 60px;
+	text-align: center;
+	padding: 10px;
+	border-bottom: 3px solid #E36B23;
+}
+
+.banner img {
+	margin: auto
+}
+
+.content {
+	padding-top: 20px;
+	text-align: center;
+}
+
+.downloadPanel {
+	padding: 20px;
+}
+
+.downloadPanel {
+	text-align: left;
+}
+
+.downloadPanel a {
+	width: 100%;
+	padding: 10px 0;
+	font-size: 18px;
+	height: 30px;
+	line-height: 30px;
+	margin-bottom: 20px;
+}
+
+
+.downloadPanel i {
+	margin-right: 10px;
+}
+
+#contribute {
+	text-align: left;
+	margin-bottom: 40px;
+}
+
+#contact {
+	text-align: left;
+}

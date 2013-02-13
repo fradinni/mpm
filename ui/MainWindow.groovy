@@ -755,6 +755,7 @@ class MainWindow {
 					panel(constraints: BorderLayout.CENTER) {
 						activeProfileLabel = label(text: MPM_ACTIVE_PROFILE.text, font: MinecraftFont.getFont(30))
 						activeProfileLabel.setBorder(BorderFactory.createEmptyBorder(12,0,0,0))
+						activeProfileLabel.setForeground(new Color(44, 127, 204))
 					}
 				}
 				tabbedPane(id: 'tabs', constraints: BorderLayout.CENTER) {

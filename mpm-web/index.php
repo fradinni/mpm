@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Minecraft Package Manager</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<!-- Bootstrap -->
+	<script src="js/jquery-1.9.1.min.js"></script>
+	<script src="js/slides.min.jquery.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+	<link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
+	<link href="css/mpm.css" rel="stylesheet" media="screen">
+</head>
+<body data-spy="scroll" data-target=".subnav">
+	
+	<div id="home" class="banner">
+		<img src="img/mpm-logo.png" />
+	</div>
+
+	<div class="content">
+		<div class="subnav">
+			<ul class="nav nav-pills">
+				<li class="active"><a href="#home">Home</a></li>
+				<li><a href="#download">Download</a></li>
+				<li><a href="#contribute">Contribute</a></li>
+				<li><a href="#contact">Contact</a></li>
+			</ul>
+		</div>
+		<div class="screenshots">
+			<img src="img/screenshot1.png" class="img-rounded">
+			<img src="img/screenshot2.png" class="img-rounded">
+		</div>
+
+		<div class="well" style="text-align: justify;">
+			<h2>Presentation</h2>
+			<br />
+			<p>
+				MPM (Minecraft Package Manager) is a package manager for minecraft.
+			</p>
+			<br />
+			<p>
+				I have developped this software for people like me who are bored to spend many hours to find and install correct versions
+				of each mod with too much sources all over the web.
+			</p>
+			<br />
+			<p>
+				MPM will make your life easier with both a full graphical user interface and a command line utility. Your can manage multiple Minecraft 
+				profiles with differents packages, different saves...
+			</p>
+			<br />
+			<p>
+				You'll be able to install,remove and browse available packages for your version of minecraft.
+			</p>
+			<br />
+			<p>
+				Try it now...
+			</p>
+
+			<div id="download"></div>
+		</div>
+
+		<br/>
+
+		<div class="downloadPanel well">
+			<h2>Download MPM</h2>
+			<br />
+			<blockquote style="text-align: left;">
+				<p>
+					MPM is actually available for <span style="color: #E37E23">Windows only</span> ! &nbsp;Linux and MacOS versions will comming soon...
+				</p>
+			</blockquote>
+			<br />
+			<a class="btn btn-primary" href="#"><i class="icon-download icon-white"></i> Download Mincraft Package Manager...</a>
+		</div>
+
+		<br />
+
+		<div id="contribute" class="well">
+			<h2>Contribute to MPM</h2>
+			<br />
+			<p>
+				<h5>How can i contribute to MPM ?</h5>
+				There is a lot of things to do on MPM, like testing on Linux and MacOS, translations, building packages... and why not your ideas ;)
+				If you want to contribute to MPM, please contact me by the contact form or by Twitter at @fradinni.
+			</p>
+			<br />
+			<p>
+				<h5>How can i build my own package for my mod or texturepack ? How can i deploy it on MPM repository ?</h5>
+				A tool for building packages will comming soon... But if can't wait and really want to deploy your package on
+				MPM repository, please contact me too... :)
+			</p>
+		</div>
+
+		<br />
+
+		<div class="row">
+			<div id="contact" class="well span6">
+				<h2>Contact</h2>
+				<br />
+				<p>
+					Contact me on twitter at @fradinni, or by this contact form:
+				</p>
+
+				<form>
+					<div class="control-group">
+						<label class="control-label" for="input01">Firstname</label>
+						<div class="controls">
+							<input type="text" class="input-xlarge" id="input01">
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label" for="input01">Lastname</label>
+						<div class="controls">
+							<input type="text" class="input-xlarge" id="input01">
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label" for="input01">Email</label>
+						<div class="controls">
+							<input type="text" class="input-xlarge" id="input01">
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label" for="textarea">Message</label>
+						<div class="controls">
+							<textarea class="input-xlarge" id="textarea" rows="3"></textarea>
+						</div>
+					</div>
+					<input type="submit" class="btn btn-primary" value="Send..." />
+				</form>
+			</div>
+			<div id="contact" class="social well span6">
+				<h2>Twitter</h2>
+				<br />
+				<a class="twitter-timeline" href="https://twitter.com/fradinni" data-widget-id="300422480722534400">Tweets de @fradinni</a>
+				<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+			</div>
+		</div>
+	</div>
+	<script type="text/javascript">
+		$(document).ready(function() {
+			$(".subnav").scrollspy();
+		});
+	</script>
+
+	
+</body>
+</html>
